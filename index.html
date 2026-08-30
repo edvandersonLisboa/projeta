@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>10 Mandamentos para a Política Brasileira</title>
+    <style>
+        :root {
+            --bg: #0d1117;
+            --card: #161b22;
+            --border: #30363d;
+            --text: #c9d1d9;
+            --muted: #8b949e;
+            --gold: #d4a853;
+            --gold-bg: rgba(212,168,83,0.08);
+            --accent: #58a6ff;
+            --accent-bg: rgba(88,166,255,0.06);
+            --green: #3fb950;
+            --red: #f85149;
+            --radius: 12px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            text-align: center;
+            padding: 60px 20px 40px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 20px;
+        }
+        header h1 {
+            font-size: 2.2em;
+            color: var(--gold);
+            letter-spacing: -0.5px;
+            margin-bottom: 8px;
+        }
+        header p {
+            color: var(--muted);
+            font-size: 1.1em;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        header .biblical {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 4px 16px;
+            border: 1px solid var(--gold);
+            border-radius: 20px;
+            color: var(--gold);
+            font-size: 0.85em;
+            opacity: 0.8;
+        }
+
+        /* Mandamento card */
+        .mandamento {
+            margin-bottom: 12px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--card);
+            overflow: hidden;
+            transition: border-color 0.3s;
+        }
+        .mandamento:hover { border-color: #484f58; }
+        .mandamento.open { border-color: var(--gold); }
+
+        .mandamento-header {
+            display: flex;
+            align-items: center;
+            padding: 18px 20px;
+            cursor: pointer;
+            user-select: none;
+            gap: 14px;
+            transition: background 0.2s;
+        }
+        .mandamento-header:hover { background: var(--gold-bg); }
+
+        .numeral {
+            width: 42px; height: 42px;
+            border-radius: 50%;
+            background: var(--gold-bg);
+            border: 1px solid var(--gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.1em;
+            color: var(--gold);
+            flex-shrink: 0;
+        }
+        .mandamento.open .numeral {
+            background: var(--gold);
+            color: var(--bg);
+        }
+
+        .mandamento-title {
+            flex: 1;
+            min-width: 0;
+        }
+        .mandamento-title .biblical {
+            font-size: 0.88em;
+            color: var(--muted);
+            font-style: italic;
+            display: block;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .mandamento-title .secular {
+            font-size: 1em;
+            font-weight: 600;
+            color: var(--text);
+            display: block;
+        }
+        .mandamento.open .mandamento-title .secular { color: var(--gold); }
+
+        .arrow {
+            width: 28px; height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.3s;
+            color: var(--muted);
+            font-size: 1.2em;
+            flex-shrink: 0;
+        }
+        .mandamento.open .arrow { transform: rotate(180deg); color: var(--gold); }
+
+        .mandamento-body {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease;
+        }
+        .mandamento.open .mandamento-body {
+            max-height: 99999px; /* large enough */
+        }
+        .mandamento-content {
+            padding: 0 20px 20px 76px;
+            color: var(--muted);
+            font-size: 0.95em;
+        }
+        .btn-ver-mais {
+            display: inline-block;
+            margin-top: 8px;
+            padding: 6px 16px;
+            background: transparent;
+            border: 1px solid var(--gold);
+            color: var(--gold);
+            border-radius: 20px;
+            font-size: 0.82em;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        .btn-ver-mais:hover {
+            background: var(--gold);
+            color: var(--bg);
+        }
+        .mandamento-content .intro {
+            margin-bottom: 16px;
+            color: #a5acb8;
+            line-height: 1.7;
+        }
+
+        /* Sub-item (level 2) */
+        .subitem {
+            margin-bottom: 6px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: #0d1117;
+            overflow: hidden;
+        }
+        .subitem-header {
+            display: flex;
+            align-items: center;
+            padding: 12px 14px;
+            cursor: pointer;
+            user-select: none;
+            gap: 8px;
+            transition: background 0.2s;
+        }
+        .subitem-header:hover { background: var(--accent-bg); }
+        .subitem.open .subitem-header { background: var(--accent-bg); }
+        .subitem.open { border-color: var(--accent); }
+
+        .subitem-icon {
+            font-size: 0.85em;
+            color: var(--accent);
+            flex-shrink: 0;
+        }
+        .subitem-text {
+            flex: 1;
+            font-size: 0.92em;
+            color: #b1bac4;
+            font-weight: 500;
+            line-height: 1.4;
+        }
+        .subitem.open .subitem-text { color: var(--accent); }
+
+        .subitem-arrow {
+            font-size: 0.8em;
+            color: var(--muted);
+            transition: transform 0.3s;
+            flex-shrink: 0;
+        }
+        .subitem.open .subitem-arrow { transform: rotate(180deg); color: var(--accent); }
+
+        .subitem-body {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease;
+        }
+        .subitem.open .subitem-body { max-height: 99999px; }
+        .subitem-detail {
+            padding: 0 14px 14px 34px;
+            color: var(--muted);
+            font-size: 0.9em;
+            line-height: 1.7;
+            border-top: 1px solid rgba(48,54,61,0.5);
+            padding-top: 12px;
+            margin-top: 0;
+        }
+
+        /* Nested sub-sub-items */
+        .subsubitem {
+            margin-bottom: 4px;
+            border-left: 2px solid var(--border);
+            padding: 6px 0 6px 12px;
+        }
+        .subsubitem strong {
+            color: var(--green);
+            display: block;
+            margin-bottom: 3px;
+            font-size: 0.88em;
+        }
+        .subsubitem p {
+            color: var(--muted);
+            font-size: 0.85em;
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--muted);
+            font-size: 0.85em;
+            border-top: 1px solid var(--border);
+            margin-top: 40px;
+        }
+
+        @media (max-width: 600px) {
+            .mandamento-content { padding: 0 12px 12px 50px; }
+            header h1 { font-size: 1.5em; }
+            .numeral { width: 34px; height: 34px; font-size: 0.95em; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+<header>
+    <h1>10 Mandamentos para a Política Brasileira</h1>
+    <p>Um decálogo de política pública inspirado nos Dez Mandamentos bíblicos, aplicados à realidade do Brasil.</p>
+    <span class="biblical">Referência ética, não religiosa</span>
+</header>
+
+<div id="mandamentos"></div>
+
+<footer>
+    Projeto Brasil &mdash; Política como arte de governar o bem comum, não o bem próprio.
+</footer>
+
+</div>
+
+<script>
+const mandamentos = [
+    {
+        num: 1,
+        biblical: "Amarás a Deus sobre todas as coisas",
+        secular: "Amarás o Brasil acima de partidos e interesses pessoais",
+        intro: "O político deve lealdade ao país e ao povo, não ao partido, ao lobby ou ao próprio bolso. O primeiro mandamento bíblico estabelece a primazia de Deus sobre qualquer outro vínculo — e se há algo que a política brasileira demonstra é que os vínculos partidários, corporativos e financeiros sempre falaram mais alto que o interesse do país.",
+        items: [
+            {
+                title: "Fim do fundo partidário — \"Partido se mantém com apoio popular, não com imposto do povo\"",
+                detail: "Criado em 1965, o fundo partidário distribuiu R$ 1,2 bilhão em 2024. O Brasil tem 29 partidos registrados no TSE, mas menos de metade tem representação real no Congresso. Muitos são \"partidos de balcão\" — existem apenas para vender tempo de TV e alugar legenda. Solução: extinção total. Partidos se mantêm com contribuições voluntárias de filiados. Um partido que não convence nem seus militantes a contribuir não tem razão de existir."
+            },
+            {
+                title: "Fim do fundão eleitoral — \"Dinheiro de hospital não financia santinho\"",
+                detail: "Criado em 2017, o Fundo Especial de Financiamento de Campanha distribui R$ 5 bilhões por eleição. Esse valor equivale ao orçamento anual de 10 hospitais de grande porte ou 50.000 salários de professor. O fundão banca santinhos, jingles e cabos eleitorais — e o contribuinte paga a campanha de todos os candidatos, goste ou não. Solução: extinção total."
+            },
+            {
+                title: "Teto de gastos por candidato — \"Não se compra eleição com dinheiro público nem privado\"",
+                detail: "Hoje o teto para Deputado Federal é R$ 3,5 milhões. Na prática, quem gasta mais contrata mais marqueteiros e abafa os concorrentes. Proposta: teto único de R$ 300.000 para todos os candidatos ao mesmo cargo — suficiente para material gráfico e redes sociais. Quem gasta R$ 3,5 milhões não representa o povo, representa quem bancou a campanha."
+            },
+            {
+                title: "Doações apenas de pessoas físicas com limite — \"Empresas não votam, pessoas votam\"",
+                detail: "A doação empresarial foi proibida pelo STF em 2015 (ADI 4.650), mas surgiram brechas: doações ocultas via partido, caixa 2 via gráficas superfaturadas e 'jabutis'. Solução: doações exclusivamente de pessoas físicas, limite de 1 salário mínimo por CPF, registro eletrônico em tempo real no site do TSE."
+            },
+            {
+                title: "Candidatura avulsa — \"Se o mandamento é amar o Brasil acima de partidos, por que o partido é obrigatório?\"",
+                detail: "A CF/88 (art. 14, §3º, V) exige filiação partidária para ser candidato. Na prática, obriga o cidadão a se curvar a um cacique partidário. A candidatura independente exige comprovação de apoio popular (2% do eleitorado do distrito com verificação biométrica) e plataforma registrada em cartório. Se eleito, vota por consciência, não por ordem de líder partidário."
+            },
+            {
+                title: "Voto facultativo consciente — \"Cidadania não se exerce com multa de R$ 3,51\"",
+                detail: "O voto obrigatório produz um eleitorado que vota por medo da multa, não por consciência. 40% dos eleitores não lembram em quem votaram (Datafolha). A qualidade da democracia se mede pelo engajamento consciente. Países com voto facultativo (EUA, Reino Unido, França, Alemanha) são igualmente democráticos."
+            }
+        ]
+    },
+    {
+        num: 2,
+        biblical: "Não farás imagem de escultura",
+        secular: "Não idolatrarás políticos ou ideologias",
+        intro: "Político não é salvador da pátria, é funcionário público com mandato revogável. O povo não deve culto a ninguém.",
+        items: [
+            {
+                title: "Voto distrital misto — modelo alemão",
+                detail: "50% dos parlamentares eleitos por distrito geográfico (o eleitor conhece e cobra seu representante local), 50% por lista partidária. Fim do deputado 'sem rosto'. O sistema atual permite que um puxador de votos com 50.000 votos eleja outros com apenas 500 votos. O distrital torna o mandato pessoal e cobrável."
+            },
+            {
+                title: "Recall de mandato",
+                detail: "O eleitor que colocou o político no cargo pode tirá-lo antes do fim do mandato, mediante abaixo-assinado. Se o Executivo pode sofrer impeachment, por que o povo não pode demitir um Deputado que traiu seus eleitores?"
+            },
+            {
+                title: "Mandato limitado a 8 anos no mesmo cargo",
+                detail: "Ninguém deve fazer carreira vitalícia em um único cargo eletivo. Renovação obrigatória da política. Soma de mandatos no mesmo cargo não pode ultrapassar 8 anos."
+            }
+        ]
+    },
+    {
+        num: 3,
+        biblical: "Não tomarás o nome de Deus em vão",
+        secular: "Não usarás religião como palanque eleitoral",
+        intro: "Deus não tem partido e fé não se vota. O terceiro mandamento proíbe usar o nome de Deus para fins vãos — e não há uso mais vão do que transformá-lo em cabo eleitoral.",
+        items: [
+            {
+                title: "Estado laico efetivo — art. 19, I, CF/88",
+                detail: "A Constituição veda à União e Estados 'estabelecer cultos religiosos ou manter com eles relações de dependência'. Na prática, o Congresso abre com oração obrigatória, repartições exibem crucifixos, e feriados seguem o calendário católico — enquanto terreiros são fechados por fiscais municipais."
+            },
+            {
+                title: "Proibição de campanha eleitoral em templos",
+                detail: "Púlpito não é palanque. Multa de R$ 100 mil por ocorrência para o candidato e para a instituição religiosa. O templo que quiser fazer debate político deve convidar todos os candidatos com regras iguais."
+            },
+            {
+                title: "Criminalização do discurso de ódio religioso",
+                detail: "STF ADO 26/2019 equiparou homofobia ao crime de racismo. O discurso religioso que incita violência ou intolerância é crime — não opinião. Fé se prega com amor, não com ódio."
+            },
+            {
+                title: "Fim da isenção fiscal para igrejas que fazem política partidária",
+                detail: "Igrejas deixam de pagar R$ 5 a R$ 8 bilhões/ano em impostos. Instituição religiosa com receita acima de R$ 1 milhão/ano deve publicar balanço contábil auditado. Uso do dízimo para campanha política, jatinho ou mansão = estelionato religioso."
+            }
+        ]
+    },
+    {
+        num: 4,
+        biblical: "Lembra-te do dia de sábado para santificá-lo",
+        secular: "Respeitarás o cidadão como fim, não como meio",
+        intro: "O trabalhador não é insumo descartável do capital. Descanso, família e lazer são direitos, não privilégios.",
+        items: [
+            {
+                title: "Jornada de 40 horas semanais sem redução salarial",
+                detail: "O Brasil parou nos anos 1980 (CF/88 fixou 44h). França (35h), Alemanha (38h) e Dinamarca (37h) provaram que menos horas não reduzem produtividade — aumentam qualidade de vida."
+            },
+            {
+                title: "Fim da escala 6x1",
+                detail: "Seis dias de trabalho para um de descanso é anacrônico. A escala ideal é 4x3 ou no máximo 5x2."
+            },
+            {
+                title: "Direito à desconexão digital",
+                detail: "Fora do horário de trabalho, patrão não manda mensagem. WhatsApp corporativo bloqueado após o expediente."
+            },
+            {
+                title: "Moradia digna e reforma urbana",
+                detail: "Brasil tem 6 milhões de famílias sem casa e 7 milhões de imóveis vazios (IBGE 2022). IPTU progressivo no tempo para imóvel ocioso (3x a 15x em 6 anos). Desapropriação após 5 anos com pagamento em títulos. MCMV a no máximo 2 km de estação de metrô/trem."
+            },
+            {
+                title: "Regulamentação rigorosa das bets",
+                detail: "Proibição de publicidade em TV e estádios. Proibido uso de cartão de crédito e Pix crédito. Limite de perda de 5% da renda líquida. Imposto de 50% sobre receita bruta destinado ao SUS para tratamento de dependentes."
+            }
+        ]
+    },
+    {
+        num: 5,
+        biblical: "Honra teu pai e tua mãe",
+        secular: "Honrarás os que vieram antes e cuidarás dos que virão",
+        intro: "Uma nação que abandona seus idosos e despreza seus professores não tem passado nem futuro.",
+        items: [
+            {
+                title: "Reforma da previdência justa (não confiscatória)",
+                detail: "Fim da DRU que desvia dinheiro da seguridade social para superávit primário. Idade mínima progressiva, mas sem exigir 40 anos de contribuição de quem começou a trabalhar aos 14."
+            },
+            {
+                title: "Piso salarial do professor: R$ 6.000 (educação básica)",
+                detail: "Professor no Brasil ganha menos que motorista de aplicativo. Países com melhor educação (Finlândia, Coreia do Sul) pagam salários dignos e atraem os melhores cérebros para a sala de aula."
+            },
+            {
+                title: "Programa nacional de cuidado integral ao idoso",
+                detail: "Centros-dia públicos, cuidadores domiciliares pelo SUS, prioridade real em filas de exames e cirurgias."
+            }
+        ]
+    },
+    {
+        num: 6,
+        biblical: "Não matarás",
+        secular: "Garantirás o direito à vida com segurança pública",
+        intro: "A omissão do Estado também mata. E o excesso do Estado mata ainda mais.",
+        items: [
+            {
+                title: "Polícia Nacional unificada de ciclo completo",
+                detail: "Fim da divisão artificial entre PM (ostensiva) e Polícia Civil (judiciária). Policial de carreira faz patrulhamento e investigação. 27 PMs + 27 PCs viram uma única Polícia Estadual integrada."
+            },
+            {
+                title: "Desmilitarização da PM e ingresso por engajamento (CLT)",
+                detail: "Fim das patentes militares. Contratação CLT (não estatutário) com processo seletivo contínuo baseado em perfil psicológico e background check. Ensino médio, idade 21 a 45 anos. Salário inicial de R$ 8.000 líquidos. Concurso público só para cargos com graduação: Delegado, Perito, Médico Legista."
+            },
+            {
+                title: "Câmera corporal obrigatória em todo território nacional",
+                detail: "Todo agente em operação usa bodycam com gravação ininterrupta. Desligar/obstruir = presunção de má-fé e inversão do ônus da prova. Cambridge (2021): redução de 93% nas queixas de abuso. PM-SP: redução de 62% na letalidade."
+            },
+            {
+                title: "Fim da guerra às drogas + cannabis medicinal e recreativa",
+                detail: "28% dos presos por tráfico são primários com menos de 100g. Uso medicinal: NEJM (2017) comprova CBD reduz 39% de convulsões. Uso recreativo: JAMA (2023) — legalização não aumenta consumo adolescente. Canadá arrecadou US$ 15 bi em 5 anos."
+            },
+            {
+                title: "Multas de trânsito proporcionais à renda",
+                detail: "Modelo finlandês. Até R$ 20.000 líquidos = multa fixa. Acima = percentual da renda líquida (2% a 5,5%). Fórmula: Renda Líquida × alíquota da faixa, teto de 50 salários mínimos."
+            }
+        ]
+    },
+    {
+        num: 7,
+        biblical: "Não adulterarás",
+        secular: "Não trairás o eleitor e as instituições",
+        intro: "O mandato é um contrato de confiança com o povo. Rompê-lo é trair a democracia.",
+        items: [
+            {
+                title: "Fim do foro privilegiado",
+                detail: "Nenhuma autoridade é julgada por tribunal especial. O Deputado que rouba deve ser julgado pelo mesmo juiz que julga o cidadão que roubou um celular."
+            },
+            {
+                title: "Fim da reeleição: mandato único de 5 anos",
+                detail: "A reeleição foi criada por FHC em 1997 e transformou o governante em candidato perpétuo. Governa pensando na campanha e usa a máquina pública para se reeleger."
+            },
+            {
+                title: "Prisão após condenação em segunda instância",
+                detail: "Confirmada a culpa por um tribunal colegiado, a pena começa. Recursos infinitos ao STJ e STF garantem impunidade eterna."
+            },
+            {
+                title: "Uso obrigatório de serviços públicos pelo político",
+                detail: "SUS obrigatório, filhos em escola pública, transporte público, aposentadoria pelo INSS no teto do RGPS, moradia funcional de até 80m². Regra: se o serviço é ruim para o político, é ruim para o povo — e será consertado rapidamente."
+            },
+            {
+                title: "Presença mínima de 70% no plenário + férias de 15 dias em junho e 30 em dezembro",
+                detail: "Abaixo de 70% = perda do mandato. Férias como qualquer trabalhador. Faltas não justificadas = desconto de R$ 1.590/dia. Teto salarial de R$ 35.000 mensais brutos, sem nenhum benefício adicional."
+            }
+        ]
+    },
+    {
+        num: 8,
+        biblical: "Não furtarás",
+        secular: "Não desviarás o dinheiro público",
+        intro: "Cada real desviado é um leito de hospital que falta, uma merenda que não chega, um professor sem salário. Corrupção é crime contra a vida.",
+        items: [
+            {
+                title: "Corrupção como crime hediondo e inafiançável",
+                detail: "Lei 8.072/90. Progressão de regime só após 2/3 da pena. Sem saidinhas, indulto ou graça. Perda automática do mandato e inelegibilidade perpétua. Imprescritível."
+            },
+            {
+                title: "Fim dos penduricalhos — \"Contracheque em uma folha A4\"",
+                detail: "Extintos: auxílio-paletó, cota parlamentar abusiva (R$ 40-100 mil+/mês), 13º/14º/15º salários, aposentadoria vitalícia para ex-Presidentes, carro blindado, passaporte diplomático para parentes. Uma linha de vencimento líquido."
+            },
+            {
+                title: "Reestatização de serviços essenciais e monopólios naturais",
+                detail: "Água, saneamento, energia, gás, ferrovias e correios não podem ser privatizados. Se forem: controle 51% de brasileiro nato, capital fechado, sem abertura em bolsa."
+            },
+            {
+                title: "Terras raras e minerais estratégicos — soberania mineral",
+                detail: "Brasil tem a 2ª maior reserva de terras raras do mundo. Nióbio: 98% das reservas mundiais vendido bruto a US$ 25/kg, revendido processado a US$ 500/kg. EBRARME: estatal 100% da União, transferência de tecnologia obrigatória, exportação só de produto processado."
+            },
+            {
+                title: "Soberania digital e software público",
+                detail: "NuvBR (nuvem soberana do Serpro). Prioridade a software livre em licitações. ComunicaBR (mensageria oficial open source). Todo código governamental publicado como open source."
+            },
+            {
+                title: "MobilizaBR — aplicativo público de mobilidade",
+                detail: "Taxa máxima de 10% para o motorista (Uber cobra 25-40%). Dados em servidor brasileiro. Preço dinâmico com teto de 1,5x. Integrado ao transporte público. Concorrência pública contra duopólio privado."
+            }
+        ]
+    },
+    {
+        num: 9,
+        biblical: "Não dirás falso testemunho",
+        secular: "Não mentirás nem desinformarás",
+        intro: "A mentira na política mata a confiança, mata a democracia e, no caso das fake news sobre vacinas e saúde, mata pessoas.",
+        items: [
+            {
+                title: "Responsabilização criminal de fake news em massa",
+                detail: "Quem financia robôs, impulsiona mentiras e cria gabinetes de ódio responde criminalmente. Liberdade de expressão não é liberdade de intoxicar."
+            },
+            {
+                title: "Educação midiática obrigatória no ensino fundamental e médio",
+                detail: "Crianças aprendem a identificar fake news, checar fontes e entender vieses algorítmicos. Um povo que não sabe ler as entrelinhas da internet é presa fácil de populistas."
+            },
+            {
+                title: "Regulação de plataformas digitais com transparência algorítmica",
+                detail: "Big techs lucram com o caos — o algoritmo empurra ódio porque gera mais engajamento. Obrigação de auditoria externa independente nos algoritmos. Responsabilização por danos coletivos causados por conteúdo impulsionado."
+            }
+        ]
+    },
+    {
+        num: 10,
+        biblical: "Não cobiçarás as coisas alheias",
+        secular: "Não concentrarás riqueza às custas da miséria",
+        intro: "O Brasil não é um país pobre — é um país profundamente desigual. O 1% mais rico concentra 28% da renda nacional. Isso não é acidente, é projeto.",
+        items: [
+            {
+                title: "Reforma tributária progressiva: fim do imposto sobre consumo, imposto sobre retirada de capital",
+                detail: "Fim de ICMS, IPI, ISS, PIS/COFINS sobre cesta básica e produtos essenciais. Criado o IRC (Imposto sobre Retirada de Capital): retirada acima de 20% do lucro líquido anual de empresa com faturamento > R$ 200 mil/mês paga de 15% a 40%. Isenção total para reinvestimento e abertura de novas empresas."
+            },
+            {
+                title: "IR sobre renda passiva acima de R$ 50 mil/mês — alíquota fixa de 27,5%",
+                detail: "Aluguéis, dividendos, JCP, ganhos de capital: tudo somado. Acima de R$ 50.001/mês, todo o valor tributado a 27,5% fixo, sem progressividade. Isenção até R$ 50 mil/mês protege o pequeno investidor."
+            },
+            {
+                title: "Tributação de dividendos + Imposto sobre Grandes Fortunas",
+                detail: "Brasil é um dos únicos países que não tributam dividendos. IGF previsto no art. 153, VII, CF/88 há 38 anos: patrimônio acima de R$ 20 milhões paga 0,5% a 2% ao ano."
+            },
+            {
+                title: "Fim do teto de gastos para saúde, educação, pesquisa e segurança",
+                detail: "EC 95/2016 congelou gastos por 20 anos. SUS perdeu R$ 22 bi (2016-2022). CNPq e Capes: corte de 70%. 7.000 pesquisadores emigraram. Teto de gastos é teto de vidas."
+            },
+            {
+                title: "Reindustrialização da cadeia alimentar + cota de retenção",
+                detail: "Brasil importa 85% dos fertilizantes. Cota de 20% da produção nacional fica no mercado interno a preço de custo + 15%. Produtor que industrializa no Brasil é isento da cota."
+            },
+            {
+                title: "Bioeconomia e política ambiental — \"Amazônia vale mais em pé\"",
+                detail: "Crédito de carbono: 70% da receita para estados da Amazônia, com Renda Florestal de R$ 500/ha/ano para famílias. BioBrasil: patentes da biodiversidade. EcoTur: pousadas públicas. Conversão de garimpeiro em fiscal ou cooperativado."
+            }
+        ]
+    }
+];
+
+function render() {
+    const container = document.getElementById('mandamentos');
+    container.innerHTML = mandamentos.map(m => {
+        const itemsHtml = m.items.map((item, i) => {
+            return `
+            <div class="subitem" data-m="${m.num}-${i}">
+                <div class="subitem-header" onclick="toggleSub(event, '${m.num}-${i}')">
+                    <span class="subitem-icon">▸</span>
+                    <span class="subitem-text">${item.title}</span>
+                    <span class="subitem-arrow">▼</span>
+                </div>
+                <div class="subitem-body">
+                    <div class="subitem-detail">${item.detail || ''}</div>
+                </div>
+            </div>`;
+        }).join('');
+
+        return `
+        <div class="mandamento" data-m="${m.num}">
+            <div class="mandamento-header" onclick="toggle(event, ${m.num})">
+                <div class="numeral">${m.num}</div>
+                <div class="mandamento-title">
+                    <span class="biblical">"${m.biblical}"</span>
+                    <span class="secular">${m.secular}</span>
+                </div>
+                <div class="arrow">▼</div>
+            </div>
+            <div class="mandamento-body">
+                <div class="mandamento-content">
+                    <p class="intro">${m.intro}</p>
+                    ${itemsHtml}
+                    <a href="mandamento.html?m=${m.num}" class="btn-ver-mais">Ver papiro completo →</a>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function toggle(event, num) {
+    const el = document.querySelector(`.mandamento[data-m="${num}"]`);
+    const wasOpen = el.classList.contains('open');
+
+    // Close all mandamentos
+    document.querySelectorAll('.mandamento').forEach(m => m.classList.remove('open'));
+    // Close all subitems
+    document.querySelectorAll('.subitem').forEach(s => s.classList.remove('open'));
+
+    // If it wasn't open, open it
+    if (!wasOpen) el.classList.add('open');
+}
+
+function toggleSub(event, key) {
+    event.stopPropagation();
+    const el = document.querySelector(`.subitem[data-m="${key}"]`);
+    el.classList.toggle('open');
+}
+
+render();
+</script>
+</body>
+</html>

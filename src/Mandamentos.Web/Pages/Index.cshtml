@@ -1,0 +1,94 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "10 Mandamentos para a Política Brasileira";
+}
+
+<section class="gbr-hero">
+    <span class="gbr-eyebrow">Por leis melhores</span>
+    <h1 class="gbr-hero__logo-h1">
+        <img src="~/asserts/logo/projeta-horizontal-claro.svg" asp-append-version="true" alt="Projeta — Sua voz ajuda a mudar o Brasil" class="gbr-hero__logo gbr-hero__logo--claro" />
+        <img src="~/asserts/logo/projeta-horizontal-escuro.svg" asp-append-version="true" alt="Projeta — Sua voz ajuda a mudar o Brasil" class="gbr-hero__logo gbr-hero__logo--escuro" />
+    </h1>
+    <p class="gbr-lead">Uma agenda cívica escrita pela comunidade — cada princípio nasce, é discutido, votado com justificativa e revisado por quem quer ver o Brasil governado de outro jeito.</p>
+    <span class="gbr-badge">Referência ética, não religiosa</span>
+    @if (Model.EhAdmin)
+    {
+        <a href="/Mandamentos/Gerenciar" class="gbr-btn gbr-btn--outline gbr-btn--sm">Gerenciar visibilidade das seções</a>
+    }
+</section>
+
+<div id="mandamentos">
+@foreach (var m in Model.MandamentosList)
+{
+    <div class="mandamento @(m.Visivel ? "" : "mandamento--oculto")" data-m="@m.Id">
+        <div class="mandamento-header" data-toggle-mandamento="@m.Id">
+            <div class="numeral">@m.Id</div>
+            <div class="mandamento-title">
+                <span class="biblical">"@m.Biblical"</span>
+                <span class="secular">@m.Secular</span>
+            </div>
+            @if (!m.Visivel)
+            {
+                <span class="gbr-badge gbr-badge--warning">Oculto do público</span>
+            }
+            <div class="arrow">&#9660;</div>
+        </div>
+        <div class="mandamento-body">
+            <div class="mandamento-content">
+                <p class="intro">@m.Intro</p>
+                @foreach (var item in m.Itens)
+                {
+                    <div class="subitem @(item.Visivel ? "" : "subitem--oculto")" data-m="@item.Id">
+                        <div class="subitem-header" data-toggle-subitem="@item.Id">
+                            <span class="subitem-icon">&#9656;</span>
+                            <span class="subitem-text">@item.Titulo</span>
+                            @if (!item.Visivel)
+                            {
+                                <span class="gbr-badge gbr-badge--warning">Oculto</span>
+                            }
+                            @{ var avaliacao = Model.AvaliacoesPorItem.GetValueOrDefault(item.Id); }
+                            <span class="gbr-badge gbr-badge--neutral subitem-votos">
+                                @if (avaliacao is not null)
+                                {
+                                    <span class="gbr-rating__display" aria-hidden="true">@Html.Raw(new string('★', (int)Math.Round(avaliacao.Media)) + new string('☆', 5 - (int)Math.Round(avaliacao.Media)))</span>
+                                }
+                                @(avaliacao?.Total ?? 0) avaliaç@((avaliacao?.Total ?? 0) == 1 ? "ão" : "ões")
+                            </span>
+                            <span class="subitem-arrow">&#9660;</span>
+                        </div>
+                        <div class="subitem-body">
+                            <div class="subitem-detail">
+                                <p>@Model.Excerpt(item)</p>
+                                <a href="/Itens/@item.Slug" class="btn-ver-mais">Ler completo e participar →</a>
+                            </div>
+                        </div>
+                    </div>
+                }
+                <div class="gbr-mandamento-propor">
+                    @if (Model.PodeParticipar)
+                    {
+                        <a href="/Mandamentos/@m.Id/Propor" class="gbr-btn gbr-btn--outline gbr-btn--sm">+ Propor novo item para este mandamento</a>
+                    }
+                    else if (User.Identity?.IsAuthenticated == true)
+                    {
+                        <a asp-page="/Conta/CompletarPerfil" class="gbr-help">Complete seu perfil para propor um novo item</a>
+                    }
+                    else
+                    {
+                        <a asp-page="/Conta/Entrar" class="gbr-help">Entre para propor um novo item</a>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+</div>
+
+<div class="gbr-home-tagline">
+    Projeto Brasil &mdash; Política como arte de governar o bem comum, não o bem próprio.
+</div>
+
+@section Scripts {
+    <script src="~/js/accordion.js" asp-append-version="true"></script>
+}

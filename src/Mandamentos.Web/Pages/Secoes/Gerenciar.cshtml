@@ -1,0 +1,98 @@
+@page "/Mandamentos/Gerenciar"
+@model Mandamentos.Web.Pages.Secoes.GerenciarModel
+@{
+    ViewData["Title"] = "Gerenciar seções";
+}
+
+<h1 class="gbr-h2">Gerenciar seções</h1>
+<p class="gbr-lead" style="margin-bottom:var(--gbr-space-6);">
+    Habilite ou oculte cada mandamento e cada item da página inicial. O que fica oculto só é acessível para administradores.
+</p>
+
+@if (TempData["MensagemSucesso"] is string sucesso)
+{
+    <div class="gbr-alert gbr-alert--success" role="status"><div class="gbr-alert__body">@sucesso</div></div>
+}
+@if (TempData["MensagemErro"] is string erro)
+{
+    <div class="gbr-alert gbr-alert--danger" role="alert"><div class="gbr-alert__body">@erro</div></div>
+}
+
+<div class="gbr-stack">
+    @foreach (var m in Model.MandamentosList)
+    {
+        <div class="gbr-card">
+            <div class="gbr-row" style="justify-content:space-between;flex-wrap:wrap;">
+                <div>
+                    <span class="gbr-eyebrow">Mandamento @m.Id</span>
+                    <h2 class="gbr-h4" style="margin-top:var(--gbr-space-1);">@m.Secular</h2>
+                </div>
+
+                <div class="gbr-row">
+                    @if (m.Visivel)
+                    {
+                        <span class="gbr-badge gbr-badge--success">Visível ao público</span>
+                    }
+                    else
+                    {
+                        <span class="gbr-badge gbr-badge--warning">Oculto do público</span>
+                    }
+
+                    <form method="post" asp-page-handler="AlternarVisibilidade" asp-route-id="@m.Id">
+                        <button type="submit" class="gbr-btn gbr-btn--sm @(m.Visivel ? "gbr-btn--outline" : "gbr-btn--secondary")">
+                            @(m.Visivel ? "Ocultar do público" : "Publicar para o público")
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <details style="margin-top:var(--gbr-space-4);">
+                <summary class="gbr-btn gbr-btn--ghost gbr-btn--sm">Editar textos</summary>
+                <form method="post" asp-page-handler="Editar" asp-route-id="@m.Id" class="gbr-stack" style="margin-top:var(--gbr-space-3);">
+                    <div class="gbr-field">
+                        <label class="gbr-label">Frase bíblica</label>
+                        <input class="gbr-input" name="biblical" value="@m.Biblical" required />
+                    </div>
+                    <div class="gbr-field">
+                        <label class="gbr-label">Título secular</label>
+                        <input class="gbr-input" name="secular" value="@m.Secular" required />
+                    </div>
+                    <div class="gbr-field">
+                        <label class="gbr-label">Introdução</label>
+                        <textarea class="gbr-textarea" name="intro" rows="3" required>@m.Intro</textarea>
+                    </div>
+                    <div class="gbr-row" style="justify-content:flex-end;">
+                        <button type="submit" class="gbr-btn gbr-btn--primary gbr-btn--sm">Salvar textos</button>
+                    </div>
+                </form>
+            </details>
+
+            @if (m.Itens.Count > 0)
+            {
+                <hr class="gbr-divider" />
+                <p class="gbr-label" style="margin-bottom:var(--gbr-space-3);">Itens deste mandamento</p>
+                <ul class="gbr-material-list">
+                    @foreach (var item in m.Itens)
+                    {
+                        <li class="gbr-material-list__item">
+                            <span style="flex:1;min-width:0;">@item.Titulo</span>
+                            @if (item.Visivel)
+                            {
+                                <span class="gbr-badge gbr-badge--success">Visível</span>
+                            }
+                            else
+                            {
+                                <span class="gbr-badge gbr-badge--warning">Oculto</span>
+                            }
+                            <form method="post" asp-page-handler="AlternarVisibilidadeItem" asp-route-id="@item.Id">
+                                <button type="submit" class="gbr-btn gbr-btn--sm @(item.Visivel ? "gbr-btn--outline" : "gbr-btn--secondary")">
+                                    @(item.Visivel ? "Ocultar" : "Publicar")
+                                </button>
+                            </form>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+    }
+</div>

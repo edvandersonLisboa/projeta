@@ -1,0 +1,12 @@
+**/bin/
+**/obj/
+**/.vs/
+**/App_Data/
+.git/
+.gitignore
+*.md
+*.zip
+blazor-govbr/
+index.html
+mandamento.html
+mandamentos-data.js

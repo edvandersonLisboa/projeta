@@ -1,0 +1,50 @@
+@page
+@model Mandamentos.Web.Pages.Conta.EntrarModel
+@{
+    ViewData["Title"] = "Entrar";
+}
+
+<div class="gbr-card gbr-auth-card">
+    <h1 class="gbr-h3 gbr-auth-card__title">Entrar</h1>
+    <p class="gbr-muted gbr-auth-card__subtitle">Acesse sua conta para participar do decálogo.</p>
+
+    @if (Model.MensagemSucesso is not null)
+    {
+        <div class="gbr-alert gbr-alert--success" role="status">
+            <div class="gbr-alert__body">@Model.MensagemSucesso</div>
+        </div>
+    }
+
+    <div asp-validation-summary="ModelOnly" class="gbr-alert gbr-alert--danger" role="alert"></div>
+
+    <form method="post" class="gbr-stack">
+        <div class="gbr-field">
+            <label class="gbr-label" asp-for="Input.Email"></label>
+            <input class="gbr-input" asp-for="Input.Email" autocomplete="email" />
+            <span class="gbr-help gbr-help--error" asp-validation-for="Input.Email"></span>
+        </div>
+
+        <div class="gbr-field">
+            <label class="gbr-label" asp-for="Input.Senha"></label>
+            <input class="gbr-input" asp-for="Input.Senha" autocomplete="current-password" />
+            <span class="gbr-help gbr-help--error" asp-validation-for="Input.Senha"></span>
+            <a asp-page="./EsqueciSenha" class="gbr-help" style="align-self:flex-end;">Esqueceu a senha?</a>
+        </div>
+
+        <button type="submit" class="gbr-btn gbr-btn--primary gbr-btn--block gbr-btn--lg">Entrar</button>
+    </form>
+
+    <hr class="gbr-divider" />
+
+    <form method="post" asp-page-handler="Google">
+        <button type="submit" class="gbr-btn gbr-btn--outline gbr-btn--block">Continuar com Google</button>
+    </form>
+
+    <p class="gbr-muted gbr-auth-card__footer">
+        Ainda não tem conta? <a asp-page="./Registrar">Criar conta</a>
+    </p>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

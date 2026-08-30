@@ -1,0 +1,304 @@
+@page "{slug}"
+@model Mandamentos.Web.Pages.Itens.IndexModel
+@{
+    ViewData["Title"] = $"{Model.ItemAtual.Titulo} — Mandamento {Model.ItemAtual.Mandamento!.Id}";
+}
+
+@if (Model.ItemAtual.Status == Mandamentos.Web.Models.ItemStatus.PropostaComunidade)
+{
+    <div class="gbr-alert gbr-alert--info gbr-item-status-banner" role="status">
+        <div>
+            <p class="gbr-alert__title">Este item é uma proposta em análise</p>
+            <p class="gbr-alert__body">Só você (o autor) e os revisores conseguem ver esta página. Ela só aparece na listagem do mandamento depois de aprovada.</p>
+        </div>
+    </div>
+}
+else if (Model.ItemAtual.Status == Mandamentos.Web.Models.ItemStatus.Arquivado)
+{
+    <div class="gbr-alert gbr-alert--danger gbr-item-status-banner" role="status">
+        <div>
+            <p class="gbr-alert__title">Este item proposto não foi aprovado</p>
+            <p class="gbr-alert__body">Motivo: @(Model.ItemAtual.MotivoRejeicao ?? "não informado")</p>
+        </div>
+    </div>
+}
+
+@if (Model.MinhaRevisaoPendenteOuRejeitada is { } minhaRevisao)
+{
+    @if (minhaRevisao.Status == Mandamentos.Web.Models.RevisaoStatus.Pendente)
+    {
+        <div class="gbr-alert gbr-alert--info gbr-item-status-banner" role="status">
+            <div>
+                <p class="gbr-alert__title">Sua edição está em análise</p>
+                <p class="gbr-alert__body">Um revisor ou administrador ainda vai avaliar sua proposta. O texto abaixo é o oficial atual, sem a sua mudança.</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="gbr-alert gbr-alert--danger gbr-item-status-banner" role="status">
+            <div>
+                <p class="gbr-alert__title">Sua edição não foi aprovada</p>
+                <p class="gbr-alert__body">Motivo: @(minhaRevisao.MotivoRejeicao ?? "não informado")</p>
+            </div>
+        </div>
+    }
+}
+
+<div class="gbr-item-layout">
+    <div class="gbr-item-layout__main">
+        <article class="gbr-card gbr-item">
+            <div class="gbr-flag-strip gbr-item__strip"><span></span><span></span><span></span></div>
+            <div class="gbr-item__numeral" aria-hidden="true">@Model.ItemAtual.Mandamento!.Id</div>
+
+            <header class="gbr-item__header">
+                <span class="gbr-eyebrow">"@Model.ItemAtual.Mandamento!.Biblical"</span>
+                <h1 class="gbr-h2">@Model.ItemAtual.Mandamento!.Secular</h1>
+            </header>
+
+            <hr class="gbr-divider" />
+
+            <div class="gbr-item__body">
+                <h2 class="gbr-h4">@Model.ItemAtual.Titulo</h2>
+                @Html.Raw(Model.CorpoHtml)
+            </div>
+
+            <hr class="gbr-divider" />
+            <p class="gbr-item__signature">— Projeto Brasil, Decálogo da Nação</p>
+            <p class="gbr-item__footnote gbr-muted">Mandamento @Model.ItemAtual.Mandamento!.Id de 10</p>
+        </article>
+
+        <div class="gbr-item__back gbr-row" style="justify-content:center;">
+            <a href="/" class="gbr-btn gbr-btn--outline">&larr; Voltar ao Decálogo</a>
+            @if (Model.PodeParticipar)
+            {
+                <a href="/Itens/@Model.ItemAtual.Slug/Editar" class="gbr-btn gbr-btn--primary">Propor edição</a>
+            }
+            else if (User.Identity?.IsAuthenticated == true)
+            {
+                <a asp-page="/Conta/CompletarPerfil" class="gbr-btn gbr-btn--ghost">Complete seu perfil para editar</a>
+            }
+            else
+            {
+                <a asp-page="/Conta/Entrar" class="gbr-btn gbr-btn--ghost">Entrar para propor edição</a>
+            }
+        </div>
+    </div>
+
+    <aside class="gbr-item-layout__sidebar">
+        <section class="gbr-card gbr-avaliacao-card" id="avaliacao">
+            <h2 class="gbr-h4">Qual a importância dessa lei?</h2>
+
+            <div class="gbr-stack">
+                <div>
+                    @if (Model.MediaEstrelas is { } media)
+                    {
+                        <span class="gbr-rating__display" aria-hidden="true">@Html.Raw(new string('★', (int)Math.Round(media)) + new string('☆', 5 - (int)Math.Round(media)))</span>
+                        <span class="gbr-muted">@media.ToString("0.0") de 5 (@Model.TotalVotos avaliação@(Model.TotalVotos == 1 ? "" : "ões"))</span>
+                    }
+                    else
+                    {
+                        <span class="gbr-muted">Ainda sem avaliações.</span>
+                    }
+                </div>
+
+                @if (Model.PodeParticipar)
+                {
+                    <form method="post" asp-page-handler="Avaliar" class="gbr-stack gbr-rating">
+                        <fieldset class="gbr-rating__stars">
+                            <legend class="gbr-visually-hidden">Sua avaliação</legend>
+                            @for (var i = 5; i >= 1; i--)
+                            {
+                                <input type="radio" id="estrela@(i)" name="estrelas" value="@i" @(Model.MinhaAvaliacao == i ? "checked" : "") />
+                                <label for="estrela@(i)" title="@i estrela(s)">★</label>
+                            }
+                        </fieldset>
+                        <div class="gbr-field">
+                            <label class="gbr-label" for="observacao">Por que essa nota? (opcional)</label>
+                            <textarea class="gbr-textarea" id="observacao" name="observacao" rows="2" maxlength="1000" placeholder="Conte o motivo da sua avaliação...">@Model.MinhaObservacao</textarea>
+                        </div>
+                        <button type="submit" class="gbr-btn gbr-btn--sm gbr-btn--primary">Enviar avaliação</button>
+                    </form>
+                }
+                else if (User.Identity?.IsAuthenticated == true)
+                {
+                    <a asp-page="/Conta/CompletarPerfil" class="gbr-help">Complete seu perfil para avaliar</a>
+                }
+                else
+                {
+                    <a asp-page="/Conta/Entrar" class="gbr-help">Entrar para avaliar</a>
+                }
+
+                @if (Model.TotalVotos > 0)
+                {
+                    <details class="gbr-historico-votos">
+                        <summary class="gbr-btn gbr-btn--ghost gbr-btn--sm">Ver mais — histórico de avaliações (@Model.TotalVotos)</summary>
+                        <ul class="gbr-material-list" style="margin-top:var(--gbr-space-3);">
+                            @foreach (var voto in Model.HistoricoVotos)
+                            {
+                                <li class="gbr-material-list__item gbr-historico-votos__item">
+                                    <div class="gbr-row" style="justify-content:space-between;width:100%;">
+                                        <span>
+                                            <span class="gbr-rating__display" aria-hidden="true" style="font-size:0.9rem;">@Html.Raw(new string('★', voto.Estrelas) + new string('☆', 5 - voto.Estrelas))</span>
+                                            <strong>@(voto.Usuario?.NomeCompleto ?? "Usuário removido")</strong>
+                                        </span>
+                                        <span class="gbr-muted" style="font-size:var(--gbr-fs-xs);">@voto.DataAtualizacao.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
+                                    </div>
+                                    @if (!string.IsNullOrWhiteSpace(voto.Observacao))
+                                    {
+                                        <p class="gbr-muted" style="margin:var(--gbr-space-1) 0 0;">"@voto.Observacao"</p>
+                                    }
+                                </li>
+                            }
+                        </ul>
+                    </details>
+                }
+            </div>
+        </section>
+
+        <section class="gbr-card gbr-material-card" id="material">
+            <h2 class="gbr-h4">Material de apoio</h2>
+            <p class="gbr-muted" style="margin-bottom:var(--gbr-space-4);">Links e documentos que fortalecem o argumento desta lei. Só aparecem para todos depois de aprovados por um revisor.</p>
+
+            @if (TempData["MensagemSucesso"] is string materialSucesso)
+            {
+                <div class="gbr-alert gbr-alert--success" role="status"><div class="gbr-alert__body">@materialSucesso</div></div>
+            }
+
+            @if (Model.Referencias.Count == 0 && Model.Documentos.Count == 0)
+            {
+                <p class="gbr-muted">Nenhuma referência ou documento enviado ainda.</p>
+            }
+
+            @if (Model.Referencias.Count > 0)
+            {
+                <ul class="gbr-material-list">
+                    @foreach (var referencia in Model.Referencias)
+                    {
+                        <li class="gbr-material-list__item">
+                            <a href="@referencia.Url" target="_blank" rel="noopener noreferrer">@referencia.Titulo</a>
+                            <span class="gbr-tag">@referencia.Tipo</span>
+                            <span class="gbr-muted gbr-material-list__autor">— @(referencia.Usuario?.NomeCompleto ?? "Usuário removido")</span>
+                            @if (referencia.Status == Mandamentos.Web.Models.RevisaoStatus.Pendente)
+                            {
+                                <span class="gbr-badge gbr-badge--warning">Em análise</span>
+                            }
+                            else if (referencia.Status == Mandamentos.Web.Models.RevisaoStatus.Rejeitada)
+                            {
+                                <span class="gbr-badge gbr-badge--danger" title="@referencia.MotivoRejeicao">Rejeitada</span>
+                            }
+                        </li>
+                    }
+                </ul>
+            }
+
+            @if (Model.Documentos.Count > 0)
+            {
+                <ul class="gbr-material-list">
+                    @foreach (var documento in Model.Documentos)
+                    {
+                        <li class="gbr-material-list__item">
+                            <a asp-page-handler="Baixar" asp-route-slug="@Model.ItemAtual.Slug" asp-route-id="@documento.Id">@documento.NomeOriginal</a>
+                            <span class="gbr-tag">@((documento.TamanhoBytes / 1024.0).ToString("0")) KB</span>
+                            <span class="gbr-muted gbr-material-list__autor">— @(documento.Usuario?.NomeCompleto ?? "Usuário removido")</span>
+                            @if (documento.Status == Mandamentos.Web.Models.RevisaoStatus.Pendente)
+                            {
+                                <span class="gbr-badge gbr-badge--warning">Em análise</span>
+                            }
+                            else if (documento.Status == Mandamentos.Web.Models.RevisaoStatus.Rejeitada)
+                            {
+                                <span class="gbr-badge gbr-badge--danger" title="@documento.MotivoRejeicao">Rejeitado</span>
+                            }
+                        </li>
+                    }
+                </ul>
+            }
+
+            @if (Model.PodeParticipar)
+            {
+                <div class="gbr-stack gbr-material-forms">
+                    <details class="gbr-material-forms__item">
+                        <summary class="gbr-btn gbr-btn--outline gbr-btn--sm">Adicionar referência (link)</summary>
+                        <form method="post" asp-page-handler="Referencia" class="gbr-stack">
+                            <div class="gbr-field">
+                                <label class="gbr-label" asp-for="NovaReferencia.Titulo"></label>
+                                <input class="gbr-input" asp-for="NovaReferencia.Titulo" />
+                                <span class="gbr-help gbr-help--error" asp-validation-for="NovaReferencia.Titulo"></span>
+                            </div>
+                            <div class="gbr-field">
+                                <label class="gbr-label" asp-for="NovaReferencia.Url">URL</label>
+                                <input class="gbr-input" asp-for="NovaReferencia.Url" placeholder="https://" />
+                                <span class="gbr-help gbr-help--error" asp-validation-for="NovaReferencia.Url"></span>
+                            </div>
+                            <div class="gbr-field">
+                                <label class="gbr-label" asp-for="NovaReferencia.Tipo"></label>
+                                <select class="gbr-select" asp-for="NovaReferencia.Tipo" asp-items="Html.GetEnumSelectList<Mandamentos.Web.Models.ReferenciaTipo>()"></select>
+                            </div>
+                            <button type="submit" class="gbr-btn gbr-btn--primary gbr-btn--sm">Enviar referência</button>
+                        </form>
+                    </details>
+
+                    <details class="gbr-material-forms__item">
+                        <summary class="gbr-btn gbr-btn--outline gbr-btn--sm">Enviar documento (arquivo)</summary>
+                        <form method="post" asp-page-handler="Documento" enctype="multipart/form-data" class="gbr-stack">
+                            <div class="gbr-field">
+                                <label class="gbr-label" for="NovoArquivo">Arquivo (PDF, Word, imagem ou TXT — máx. 10 MB)</label>
+                                <input class="gbr-input" type="file" id="NovoArquivo" name="NovoArquivo" />
+                            </div>
+                            <button type="submit" class="gbr-btn gbr-btn--primary gbr-btn--sm">Enviar documento</button>
+                        </form>
+                    </details>
+                </div>
+            }
+            else if (User.Identity?.IsAuthenticated == true)
+            {
+                <p class="gbr-muted"><a asp-page="/Conta/CompletarPerfil">Complete seu perfil</a> para enviar material de apoio.</p>
+            }
+            else
+            {
+                <p class="gbr-muted"><a asp-page="/Conta/Entrar">Entre</a> para enviar material de apoio.</p>
+            }
+        </section>
+    </aside>
+</div>
+
+<section class="gbr-card gbr-comentarios-card" id="comentarios">
+    <h2 class="gbr-h4">Comentários (@Model.Comentarios.Count(c => !c.Removido || c.Respostas.Any(r => !r.Removido)))</h2>
+
+    @if (Model.PodeParticipar)
+    {
+        <form method="post" asp-page-handler="Comentario" class="gbr-stack" style="margin-bottom:var(--gbr-space-6);">
+            <div class="gbr-field">
+                <textarea name="NovoComentario.Texto" class="gbr-textarea" rows="3" placeholder="Escreva um comentário..." required></textarea>
+            </div>
+            <div class="gbr-row" style="justify-content:flex-end;">
+                <button type="submit" class="gbr-btn gbr-btn--primary gbr-btn--sm">Comentar</button>
+            </div>
+        </form>
+    }
+    else if (User.Identity?.IsAuthenticated == true)
+    {
+        <p class="gbr-muted"><a asp-page="/Conta/CompletarPerfil">Complete seu perfil</a> para comentar.</p>
+    }
+    else
+    {
+        <p class="gbr-muted"><a asp-page="/Conta/Entrar">Entre</a> para comentar.</p>
+    }
+
+    @{
+        ViewData["Slug"] = Model.ItemAtual.Slug;
+        ViewData["UsuarioAtualId"] = Model.UsuarioAtualId;
+        ViewData["EhModerador"] = Model.UsuarioAtualEhModerador;
+        ViewData["PodeParticipar"] = Model.PodeParticipar;
+    }
+    <div class="gbr-stack">
+        @foreach (var comentario in Model.Comentarios)
+        {
+            <partial name="_Comentario" model="comentario" />
+        }
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

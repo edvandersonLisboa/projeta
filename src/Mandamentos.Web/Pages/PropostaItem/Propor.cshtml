@@ -1,0 +1,43 @@
+@page "/Mandamentos/{mandamentoId:int}/Propor"
+@model Mandamentos.Web.Pages.PropostaItem.ProporModel
+@{
+    ViewData["Title"] = $"Propor novo item — Mandamento {Model.MandamentoAtual.Id}";
+}
+
+<div class="gbr-card gbr-edit-card">
+    <span class="gbr-eyebrow">Mandamento @Model.MandamentoAtual.Id</span>
+    <h1 class="gbr-h3">Propor novo item</h1>
+    <p class="gbr-muted" style="margin-bottom:var(--gbr-space-6);">
+        "@Model.MandamentoAtual.Secular" — sua proposta fica visível só pra você até um revisor ou administrador aprovar.
+        Depois de aprovada, aparece na listagem para todo mundo.
+    </p>
+
+    <div asp-validation-summary="ModelOnly" class="gbr-alert gbr-alert--danger" role="alert"></div>
+
+    <form method="post" class="gbr-stack">
+        <div class="gbr-field">
+            <label class="gbr-label" asp-for="Input.Titulo"></label>
+            <input class="gbr-input" asp-for="Input.Titulo" />
+            <span class="gbr-help gbr-help--error" asp-validation-for="Input.Titulo"></span>
+        </div>
+
+        <div class="gbr-field">
+            <label class="gbr-label" asp-for="Input.Corpo">Texto</label>
+            <textarea class="gbr-textarea" asp-for="Input.Corpo" rows="14"></textarea>
+            <span class="gbr-help gbr-help--error" asp-validation-for="Input.Corpo"></span>
+        </div>
+
+        <div class="gbr-row" style="justify-content:flex-end;">
+            <a href="/" class="gbr-btn gbr-btn--ghost">Cancelar</a>
+            <button type="submit" class="gbr-btn gbr-btn--primary">Enviar para revisão</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <link rel="stylesheet" href="~/lib/quill/quill.snow.css" />
+    <script src="~/lib/quill/quill.js"></script>
+    <script src="~/js/rich-editor.js" asp-append-version="true"></script>
+    <script>initRichEditor('Input_Corpo');</script>
+}

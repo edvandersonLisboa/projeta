@@ -1,0 +1,44 @@
+@page "/Itens/{slug}/Editar"
+@model Mandamentos.Web.Pages.Itens.EditarModel
+@{
+    ViewData["Title"] = $"Propor edição — {Model.ItemAtual.Titulo}";
+}
+
+<div class="gbr-card gbr-edit-card">
+    <span class="gbr-eyebrow">Mandamento @Model.ItemAtual.Mandamento!.Id</span>
+    <h1 class="gbr-h3">Propor edição</h1>
+    <p class="gbr-muted" style="margin-bottom:var(--gbr-space-6);">
+        "@Model.ItemAtual.Titulo" — o texto original abaixo não pode ser reescrito do zero.
+        Edite só o parágrafo que quer mudar, ou adicione um parágrafo novo. Sua proposta fica pendente
+        até um revisor ou administrador aprovar. Se não for aprovada, o texto atual continua valendo e você verá o motivo.
+    </p>
+
+    <div asp-validation-summary="ModelOnly" class="gbr-alert gbr-alert--danger" role="alert"></div>
+
+    <form method="post" class="gbr-stack">
+        <div class="gbr-field">
+            <label class="gbr-label">Texto</label>
+            <div id="paragraph-editor-container"></div>
+            <textarea class="gbr-textarea" asp-for="Input.CorpoNovo" style="display:none;"></textarea>
+            <span class="gbr-help gbr-help--error" asp-validation-for="Input.CorpoNovo"></span>
+        </div>
+
+        <div class="gbr-field">
+            <label class="gbr-label" asp-for="Input.ComentarioDaMudanca"></label>
+            <textarea class="gbr-textarea" asp-for="Input.ComentarioDaMudanca" rows="3"></textarea>
+        </div>
+
+        <div class="gbr-row" style="justify-content:flex-end;">
+            <a href="/Itens/@Model.ItemAtual.Slug" class="gbr-btn gbr-btn--ghost">Cancelar</a>
+            <button type="submit" class="gbr-btn gbr-btn--primary">Enviar para revisão</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <link rel="stylesheet" href="~/lib/quill/quill.snow.css" />
+    <script src="~/lib/quill/quill.js"></script>
+    <script src="~/js/paragraph-editor.js" asp-append-version="true"></script>
+    <script>initParagraphEditor('Input_CorpoNovo', 'paragraph-editor-container');</script>
+}

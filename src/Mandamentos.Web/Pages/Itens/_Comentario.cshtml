@@ -1,0 +1,45 @@
+@model Mandamentos.Web.Models.Comentario
+@{
+    var slug = (string)ViewData["Slug"]!;
+    var usuarioAtualId = ViewData["UsuarioAtualId"] as string;
+    var ehModerador = ViewData["EhModerador"] is true;
+    var podeParticipar = ViewData["PodeParticipar"] is true;
+    var podeRemover = !Model.Removido && (Model.UsuarioId == usuarioAtualId || ehModerador);
+}
+<div class="gbr-comentario">
+    <div class="gbr-comentario__head">
+        <span class="gbr-comentario__autor">@(Model.Removido ? "—" : (Model.Usuario?.NomeCompleto ?? "Usuário removido"))</span>
+        <span class="gbr-comentario__data">@Model.DataCriacao.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
+    </div>
+    <p class="gbr-comentario__texto">@(Model.Removido ? "[comentário removido]" : Model.Texto)</p>
+
+    <div class="gbr-row gbr-comentario__acoes">
+        @if (!Model.Removido && podeParticipar)
+        {
+            <details class="gbr-comentario__responder">
+                <summary class="gbr-help">Responder</summary>
+                <form method="post" asp-page="/Itens/Index" asp-page-handler="Comentario" asp-route-slug="@slug" class="gbr-stack">
+                    <textarea name="NovoComentario.Texto" class="gbr-textarea" rows="2" required></textarea>
+                    <input type="hidden" name="NovoComentario.ComentarioPaiId" value="@Model.Id" />
+                    <button type="submit" class="gbr-btn gbr-btn--sm gbr-btn--outline">Enviar resposta</button>
+                </form>
+            </details>
+        }
+        @if (podeRemover)
+        {
+            <form method="post" asp-page="/Itens/Index" asp-page-handler="RemoverComentario" asp-route-slug="@slug" asp-route-id="@Model.Id">
+                <button type="submit" class="gbr-btn gbr-btn--ghost gbr-btn--sm">Remover</button>
+            </form>
+        }
+    </div>
+
+    @if (Model.Respostas.Count > 0)
+    {
+        <div class="gbr-comentario__respostas">
+            @foreach (var resposta in Model.Respostas.OrderBy(r => r.DataCriacao))
+            {
+                <partial name="_Comentario" model="resposta" />
+            }
+        </div>
+    }
+</div>
