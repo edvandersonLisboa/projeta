@@ -1,0 +1,208 @@
+@page
+@model Projetar.Web.Pages.Moderacao.IndexModel
+@{
+    ViewData["Title"] = "Moderação";
+    var total = Model.Pendentes.Count + Model.ReferenciasPendentes.Count + Model.DocumentosPendentes.Count + Model.ItensPropostos.Count;
+}
+
+<h1 class="gbr-h2">Fila de moderação</h1>
+<p class="gbr-lead" style="margin-bottom:var(--gbr-space-6);">
+    @total ite(ns) aguardando revisão.
+</p>
+
+@if (TempData["MensagemSucesso"] is string sucesso)
+{
+    <div class="gbr-alert gbr-alert--success" role="status"><div class="gbr-alert__body">@sucesso</div></div>
+}
+@if (TempData["MensagemErro"] is string erro)
+{
+    <div class="gbr-alert gbr-alert--danger" role="alert"><div class="gbr-alert__body">@erro</div></div>
+}
+
+<h2 class="gbr-h4">Edições de texto (@Model.Pendentes.Count)</h2>
+@if (Model.Pendentes.Count == 0)
+{
+    <p class="gbr-muted">Nenhuma edição pendente.</p>
+}
+<div class="gbr-stack" style="margin-bottom:var(--gbr-space-8);">
+    @foreach (var revisao in Model.Pendentes)
+    {
+        <div class="gbr-card gbr-moderacao-item">
+            <div class="gbr-row" style="justify-content:space-between;">
+                <div>
+                    <span class="gbr-eyebrow">Mandamento @revisao.Item!.Mandamento!.Id</span>
+                    <h3 class="gbr-h4" style="margin-top:var(--gbr-space-1);">@revisao.Item.Titulo</h3>
+                </div>
+                <span class="gbr-badge">@revisao.DataRevisao.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
+            </div>
+
+            <p class="gbr-muted" style="margin:var(--gbr-space-2) 0 var(--gbr-space-4);">
+                Proposto por <strong>@(revisao.AutorUsuario?.NomeCompleto ?? "Usuário removido")</strong>
+                @if (revisao.Apoios.Count > 0)
+                {
+                    <span class="gbr-badge gbr-badge--success">@revisao.Apoios.Count apoio@(revisao.Apoios.Count == 1 ? "" : "s")</span>
+                }
+                @if (!string.IsNullOrWhiteSpace(revisao.ComentarioDaMudanca))
+                {
+                    <span> — "@revisao.ComentarioDaMudanca"</span>
+                }
+            </p>
+
+            <p class="gbr-label">O que mudou</p>
+            <div class="gbr-moderacao-redline">@Html.Raw(Model.Redline(revisao.CorpoAnterior, revisao.CorpoNovo))</div>
+
+            <details class="gbr-moderacao-formatacao">
+                <summary class="gbr-btn gbr-btn--ghost gbr-btn--sm">Ver formatação completa</summary>
+                <div class="gbr-row" style="align-items:stretch;gap:var(--gbr-space-4);margin-top:var(--gbr-space-2);">
+                    <div style="flex:1;min-width:0;">
+                        <p class="gbr-label">Texto atual</p>
+                        <div class="gbr-moderacao-diff gbr-moderacao-diff--atual">@Html.Raw(Model.Render(revisao.CorpoAnterior))</div>
+                    </div>
+                    <div style="flex:1;min-width:0;">
+                        <p class="gbr-label">Proposta</p>
+                        <div class="gbr-moderacao-diff gbr-moderacao-diff--novo">@Html.Raw(Model.Render(revisao.CorpoNovo))</div>
+                    </div>
+                </div>
+            </details>
+
+            <div class="gbr-row" style="justify-content:flex-end;margin-top:var(--gbr-space-4);">
+                <form method="post" asp-page-handler="Aprovar" asp-route-id="@revisao.Id">
+                    <button type="submit" class="gbr-btn gbr-btn--secondary">Aprovar</button>
+                </form>
+
+                <details class="gbr-moderacao-rejeitar">
+                    <summary class="gbr-btn gbr-btn--danger">Rejeitar</summary>
+                    <form method="post" asp-page-handler="Rejeitar" class="gbr-stack gbr-moderacao-rejeitar__form">
+                        <input type="hidden" name="Rejeitar.AlvoId" value="@revisao.Id" />
+                        <textarea name="Rejeitar.Motivo" class="gbr-textarea" rows="2" placeholder="Explique por que a edição não foi aceita..." required></textarea>
+                        <button type="submit" class="gbr-btn gbr-btn--danger gbr-btn--sm">Confirmar rejeição</button>
+                    </form>
+                </details>
+            </div>
+        </div>
+    }
+</div>
+
+<h2 class="gbr-h4">Referências (@Model.ReferenciasPendentes.Count)</h2>
+@if (Model.ReferenciasPendentes.Count == 0)
+{
+    <p class="gbr-muted">Nenhuma referência pendente.</p>
+}
+<div class="gbr-stack" style="margin-bottom:var(--gbr-space-8);">
+    @foreach (var referencia in Model.ReferenciasPendentes)
+    {
+        <div class="gbr-card gbr-moderacao-item">
+            <div class="gbr-row" style="justify-content:space-between;">
+                <div>
+                    <span class="gbr-eyebrow">Mandamento @referencia.Item!.Mandamento!.Id — @referencia.Item.Titulo</span>
+                    <h3 class="gbr-h4" style="margin-top:var(--gbr-space-1);"><a href="@referencia.Url" target="_blank" rel="noopener noreferrer">@referencia.Titulo</a></h3>
+                    <span class="gbr-tag">@referencia.Tipo</span>
+                </div>
+                <span class="gbr-badge">@referencia.DataCriacao.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
+            </div>
+
+            <p class="gbr-muted" style="margin:var(--gbr-space-2) 0;">
+                Enviada por <strong>@(referencia.Usuario?.NomeCompleto ?? "Usuário removido")</strong>
+            </p>
+
+            <div class="gbr-row" style="justify-content:flex-end;margin-top:var(--gbr-space-2);">
+                <form method="post" asp-page-handler="AprovarReferencia" asp-route-id="@referencia.Id">
+                    <button type="submit" class="gbr-btn gbr-btn--secondary">Aprovar</button>
+                </form>
+
+                <details class="gbr-moderacao-rejeitar">
+                    <summary class="gbr-btn gbr-btn--danger">Rejeitar</summary>
+                    <form method="post" asp-page-handler="RejeitarReferencia" class="gbr-stack gbr-moderacao-rejeitar__form">
+                        <input type="hidden" name="RejeitarReferencia.AlvoId" value="@referencia.Id" />
+                        <textarea name="RejeitarReferencia.Motivo" class="gbr-textarea" rows="2" placeholder="Explique por que a referência não foi aceita..." required></textarea>
+                        <button type="submit" class="gbr-btn gbr-btn--danger gbr-btn--sm">Confirmar rejeição</button>
+                    </form>
+                </details>
+            </div>
+        </div>
+    }
+</div>
+
+<h2 class="gbr-h4">Documentos (@Model.DocumentosPendentes.Count)</h2>
+@if (Model.DocumentosPendentes.Count == 0)
+{
+    <p class="gbr-muted">Nenhum documento pendente.</p>
+}
+<div class="gbr-stack">
+    @foreach (var documento in Model.DocumentosPendentes)
+    {
+        <div class="gbr-card gbr-moderacao-item">
+            <div class="gbr-row" style="justify-content:space-between;">
+                <div>
+                    <span class="gbr-eyebrow">Mandamento @documento.Item!.Mandamento!.Id — @documento.Item.Titulo</span>
+                    <h3 class="gbr-h4" style="margin-top:var(--gbr-space-1);">
+                        <a asp-page="/Itens/Index" asp-page-handler="Baixar" asp-route-slug="@documento.Item.Slug" asp-route-id="@documento.Id">@documento.NomeOriginal</a>
+                    </h3>
+                    <span class="gbr-tag">@((documento.TamanhoBytes / 1024.0).ToString("0")) KB · @documento.ContentType</span>
+                </div>
+                <span class="gbr-badge">@documento.DataUpload.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
+            </div>
+
+            <p class="gbr-muted" style="margin:var(--gbr-space-2) 0;">
+                Enviado por <strong>@(documento.Usuario?.NomeCompleto ?? "Usuário removido")</strong>
+            </p>
+
+            <div class="gbr-row" style="justify-content:flex-end;margin-top:var(--gbr-space-2);">
+                <form method="post" asp-page-handler="AprovarDocumento" asp-route-id="@documento.Id">
+                    <button type="submit" class="gbr-btn gbr-btn--secondary">Aprovar</button>
+                </form>
+
+                <details class="gbr-moderacao-rejeitar">
+                    <summary class="gbr-btn gbr-btn--danger">Rejeitar</summary>
+                    <form method="post" asp-page-handler="RejeitarDocumento" class="gbr-stack gbr-moderacao-rejeitar__form">
+                        <input type="hidden" name="RejeitarDocumento.AlvoId" value="@documento.Id" />
+                        <textarea name="RejeitarDocumento.Motivo" class="gbr-textarea" rows="2" placeholder="Explique por que o documento não foi aceito..." required></textarea>
+                        <button type="submit" class="gbr-btn gbr-btn--danger gbr-btn--sm">Confirmar rejeição</button>
+                    </form>
+                </details>
+            </div>
+        </div>
+    }
+</div>
+
+<h2 class="gbr-h4">Novos itens propostos (@Model.ItensPropostos.Count)</h2>
+@if (Model.ItensPropostos.Count == 0)
+{
+    <p class="gbr-muted">Nenhum item proposto pendente.</p>
+}
+<div class="gbr-stack">
+    @foreach (var item in Model.ItensPropostos)
+    {
+        <div class="gbr-card gbr-moderacao-item">
+            <div class="gbr-row" style="justify-content:space-between;">
+                <div>
+                    <span class="gbr-eyebrow">Mandamento @item.Mandamento!.Id — @item.Mandamento.Secular</span>
+                    <h3 class="gbr-h4" style="margin-top:var(--gbr-space-1);">@item.Titulo</h3>
+                </div>
+                <span class="gbr-badge">@item.DataCriacao.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
+            </div>
+
+            <p class="gbr-muted" style="margin:var(--gbr-space-2) 0 var(--gbr-space-4);">
+                Proposto por <strong>@(item.CriadoPorUsuario?.NomeCompleto ?? "Usuário removido")</strong>
+            </p>
+
+            <div class="gbr-moderacao-diff">@Html.Raw(Model.Render(item.Corpo))</div>
+
+            <div class="gbr-row" style="justify-content:flex-end;margin-top:var(--gbr-space-4);">
+                <a href="/Itens/@item.Slug" target="_blank" class="gbr-btn gbr-btn--outline">Ver página completa</a>
+                <form method="post" asp-page-handler="AprovarItem" asp-route-id="@item.Id">
+                    <button type="submit" class="gbr-btn gbr-btn--secondary">Aprovar</button>
+                </form>
+
+                <details class="gbr-moderacao-rejeitar">
+                    <summary class="gbr-btn gbr-btn--danger">Rejeitar</summary>
+                    <form method="post" asp-page-handler="RejeitarItem" class="gbr-stack gbr-moderacao-rejeitar__form">
+                        <input type="hidden" name="RejeitarItem.AlvoId" value="@item.Id" />
+                        <textarea name="RejeitarItem.Motivo" class="gbr-textarea" rows="2" placeholder="Explique por que o item não foi aceito..." required></textarea>
+                        <button type="submit" class="gbr-btn gbr-btn--danger gbr-btn--sm">Confirmar rejeição</button>
+                    </form>
+                </details>
+            </div>
+        </div>
+    }
+</div>

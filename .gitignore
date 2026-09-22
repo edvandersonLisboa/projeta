@@ -482,4 +482,4 @@ $RECYCLE.BIN/
 *.swp
 
 # Arquivos enviados por usuários (referências/documentos) — armazenados fora de wwwroot
-src/Mandamentos.Web/App_Data/
+src/Projetar.Web/App_Data/

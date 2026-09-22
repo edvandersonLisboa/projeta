@@ -1,0 +1,65 @@
+@page
+@model Projetar.Web.Pages.Conta.CompletarPerfilModel
+@{
+    ViewData["Title"] = "Completar perfil";
+}
+
+<div class="gbr-card gbr-auth-card">
+    <h1 class="gbr-h3 gbr-auth-card__title">Complete seu perfil</h1>
+    <p class="gbr-muted gbr-auth-card__subtitle">
+        Estado e município são obrigatórios para liberar edição, comentários, votos e referências.
+        Telefone e CPF são opcionais.
+    </p>
+
+    <div asp-validation-summary="ModelOnly" class="gbr-alert gbr-alert--danger" role="alert"></div>
+
+    <form method="post" class="gbr-stack">
+        <div class="gbr-row gbr-auth-card__row">
+            <div class="gbr-field" style="flex:1;">
+                <label class="gbr-label" asp-for="Input.Nome"></label>
+                <input class="gbr-input" asp-for="Input.Nome" />
+                <span class="gbr-help gbr-help--error" asp-validation-for="Input.Nome"></span>
+            </div>
+            <div class="gbr-field" style="flex:1;">
+                <label class="gbr-label" asp-for="Input.Sobrenome"></label>
+                <input class="gbr-input" asp-for="Input.Sobrenome" />
+                <span class="gbr-help gbr-help--error" asp-validation-for="Input.Sobrenome"></span>
+            </div>
+        </div>
+
+        <div class="gbr-row gbr-auth-card__row">
+            <div class="gbr-field" style="flex:1;">
+                <label class="gbr-label" asp-for="Input.Estado"></label>
+                <select class="gbr-select" asp-for="Input.Estado">
+                    <option value="">Selecione...</option>
+                    @foreach (var (sigla, nome) in Model.Estados)
+                    {
+                        <option value="@sigla">@nome</option>
+                    }
+                </select>
+                <span class="gbr-help gbr-help--error" asp-validation-for="Input.Estado"></span>
+            </div>
+            <div class="gbr-field" style="flex:1;">
+                <label class="gbr-label" asp-for="Input.Municipio"></label>
+                <input class="gbr-input" asp-for="Input.Municipio" />
+                <span class="gbr-help gbr-help--error" asp-validation-for="Input.Municipio"></span>
+            </div>
+        </div>
+
+        <div class="gbr-field">
+            <label class="gbr-label" asp-for="Input.Telefone"></label>
+            <input class="gbr-input" asp-for="Input.Telefone" autocomplete="tel" />
+        </div>
+
+        <div class="gbr-field">
+            <label class="gbr-label" asp-for="Input.Cpf"></label>
+            <input class="gbr-input" asp-for="Input.Cpf" />
+        </div>
+
+        <button type="submit" class="gbr-btn gbr-btn--primary gbr-btn--block gbr-btn--lg">Salvar e continuar</button>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
