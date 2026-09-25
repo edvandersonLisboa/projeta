@@ -577,19 +577,40 @@ public class IndexModel(
 
     public async Task<IActionResult> OnGetBaixarAsync(string slug, Guid id)
     {
-        var documento = await db.Documentos.Include(d => d.Item).FirstOrDefaultAsync(d => d.Id == id);
-        if (documento is null || documento.Item is null || documento.Item.Slug != slug)
+        var documento = await db.Documentos
+            .Include(d => d.Item)
+            .ThenInclude(i => i!.Principio)
+            .FirstOrDefaultAsync(d => d.Id == id);
+        if (documento is null || documento.Item is null || documento.Item.Principio is null || documento.Item.Slug != slug)
         {
             return NotFound();
         }
 
+        var item = documento.Item;
         var usuario = await userManager.GetUserAsync(User);
+        var ehAdmin = User.IsInRole("Admin");
         var ehDono = usuario is not null && documento.UsuarioId == usuario.Id;
         var ehModerador = usuario is not null &&
-            (User.IsInRole("Admin") || await permissoes.PodeModerarItemAsync(usuario.Id, documento.ItemId));
+            (ehAdmin || await permissoes.PodeModerarItemAsync(usuario.Id, documento.ItemId));
+
+        // Documento pendente/rejeitado: só quem enviou ou quem modera o item pode ver.
         if (documento.Status != RevisaoStatus.Aprovada && !ehDono && !ehModerador)
         {
             return Forbid();
+        }
+
+        // Mesma trava de visibilidade da própria página do item — não adianta o documento estar
+        // aprovado se o item/princípio está oculto, ou se o item ainda é uma proposta privada.
+        if ((!item.Principio.Visivel || !item.Visivel) && !ehAdmin)
+        {
+            return NotFound();
+        }
+
+        var ehItemPublico = item.Status is ItemStatus.Original or ItemStatus.Aprovado;
+        var ehAutorDoItem = usuario is not null && item.CriadoPorUsuarioId == usuario.Id;
+        if (!ehItemPublico && !ehAutorDoItem && !ehModerador)
+        {
+            return NotFound();
         }
 
         var caminhoCompleto = Path.Combine(env.ContentRootPath, "App_Data", "uploads", documento.CaminhoArmazenado);
