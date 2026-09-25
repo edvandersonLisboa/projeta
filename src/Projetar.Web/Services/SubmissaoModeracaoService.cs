@@ -57,6 +57,69 @@ public class SubmissaoModeracaoService(ApplicationDbContext db) : ISubmissaoMode
         return lista.OrderByDescending(s => s.DataCriacao).ToList();
     }
 
+    /// <summary>Toda movimentação (de qualquer autor) que aconteceu nos itens informados — usado pelo
+    /// Dashboard pra dar ao criador de um item a visão geral de tudo que aconteceu nele.</summary>
+    public async Task<List<SubmissaoResumo>> ListarPorItensAsync(IEnumerable<Guid> itemIds)
+    {
+        var ids = itemIds as ICollection<Guid> ?? itemIds.ToList();
+        if (ids.Count == 0)
+        {
+            return [];
+        }
+
+        var lista = new List<SubmissaoResumo>();
+
+        var itens = await db.Itens.Where(i => ids.Contains(i.Id)).Include(i => i.Principio).AsNoTracking().ToListAsync();
+        lista.AddRange(itens.Where(i => i.Principio is not null).Select(MapearItem));
+
+        var revisoes = await db.ItemRevisoes.Where(r => ids.Contains(r.ItemId)).Include(r => r.Item).AsNoTracking().ToListAsync();
+        lista.AddRange(revisoes.Where(r => r.Item is not null).Select(MapearRevisao));
+
+        var referencias = await db.Referencias.Where(r => ids.Contains(r.ItemId)).Include(r => r.Item).AsNoTracking().ToListAsync();
+        lista.AddRange(referencias.Where(r => r.Item is not null).Select(MapearReferencia));
+
+        var documentos = await db.Documentos.Where(d => ids.Contains(d.ItemId)).Include(d => d.Item).AsNoTracking().ToListAsync();
+        lista.AddRange(documentos.Where(d => d.Item is not null).Select(MapearDocumento));
+
+        var tags = await db.TagSugestoes.Where(t => ids.Contains(t.ItemId)).Include(t => t.Item).AsNoTracking().ToListAsync();
+        lista.AddRange(tags.Where(t => t.Item is not null).Select(MapearTag));
+
+        var banners = await db.BannerSugestoes.Where(b => ids.Contains(b.ItemId)).Include(b => b.Item).AsNoTracking().ToListAsync();
+        lista.AddRange(banners.Where(b => b.Item is not null).Select(MapearBanner));
+
+        await PreencherContagemDeMensagensAsync(lista);
+
+        return lista.OrderByDescending(s => s.DataCriacao).ToList();
+    }
+
+    /// <summary>Toda movimentação da plataforma, sem filtro — visão global só pra Admin no Dashboard.</summary>
+    public async Task<List<SubmissaoResumo>> ListarTodasAsync()
+    {
+        var lista = new List<SubmissaoResumo>();
+
+        var itens = await db.Itens.Include(i => i.Principio).AsNoTracking().ToListAsync();
+        lista.AddRange(itens.Where(i => i.Principio is not null).Select(MapearItem));
+
+        var revisoes = await db.ItemRevisoes.Include(r => r.Item).AsNoTracking().ToListAsync();
+        lista.AddRange(revisoes.Where(r => r.Item is not null).Select(MapearRevisao));
+
+        var referencias = await db.Referencias.Include(r => r.Item).AsNoTracking().ToListAsync();
+        lista.AddRange(referencias.Where(r => r.Item is not null).Select(MapearReferencia));
+
+        var documentos = await db.Documentos.Include(d => d.Item).AsNoTracking().ToListAsync();
+        lista.AddRange(documentos.Where(d => d.Item is not null).Select(MapearDocumento));
+
+        var tags = await db.TagSugestoes.Include(t => t.Item).AsNoTracking().ToListAsync();
+        lista.AddRange(tags.Where(t => t.Item is not null).Select(MapearTag));
+
+        var banners = await db.BannerSugestoes.Include(b => b.Item).AsNoTracking().ToListAsync();
+        lista.AddRange(banners.Where(b => b.Item is not null).Select(MapearBanner));
+
+        await PreencherContagemDeMensagensAsync(lista);
+
+        return lista.OrderByDescending(s => s.DataCriacao).ToList();
+    }
+
     public async Task<List<SubmissaoResumo>> ListarComConversaAsync()
     {
         var alvos = await db.MensagensModeracao
