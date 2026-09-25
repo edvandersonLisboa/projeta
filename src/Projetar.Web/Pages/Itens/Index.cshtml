@@ -14,6 +14,15 @@
     ViewData["Title"] = $"{Model.ItemAtual.Titulo} — Princípio {principio.Id}";
     ViewData["NavAtivo"] = "Propostas";
     ViewData["TopbarContexto"] = $"Princípio {principio.Id} de 10";
+
+    // Card de compartilhamento (Open Graph/Twitter) desta proposta específica — usa o banner
+    // do item quando existir, e um resumo do texto como descrição, em vez do card genérico do site.
+    ViewData["MetaDescricao"] = SeoUtils.ResumoTexto(Model.ItemAtual.Corpo);
+    ViewData["MetaTipo"] = "article";
+    if (!string.IsNullOrWhiteSpace(Model.ItemAtual.BannerImagem))
+    {
+        ViewData["MetaImagem"] = Model.ItemAtual.BannerImagem;
+    }
 }
 
 @* ---------- Breadcrumb ---------- *@

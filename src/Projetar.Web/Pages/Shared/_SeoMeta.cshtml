@@ -1,0 +1,42 @@
+@{
+    var _seoDescricaoPadrao = "Projeta é a comunidade cívica que rascunha ideias de mudança de lei pro Brasil, em linguagem simples — sem juridiquês. Dez princípios, propostas votadas e revisadas por qualquer cidadão. Sem partido, sem doutrina, sem dono.";
+    var _seoDescricao = ViewData["MetaDescricao"] as string ?? _seoDescricaoPadrao;
+    var _seoTipo = ViewData["MetaTipo"] as string ?? "website";
+    var _seoTitulo = ViewData["Title"] as string ?? "Projeta";
+    var _seoUrlAtual = $"{ViewContext.HttpContext.Request.Scheme}://{ViewContext.HttpContext.Request.Host}{ViewContext.HttpContext.Request.Path}";
+
+    var _seoImagemRelativa = ViewData["MetaImagem"] as string ?? "/img/simbolo.png";
+    var _seoImagem = _seoImagemRelativa.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+        ? _seoImagemRelativa
+        : $"{ViewContext.HttpContext.Request.Scheme}://{ViewContext.HttpContext.Request.Host}{_seoImagemRelativa}";
+}
+<meta name="google-site-verification" content="_qi8FNDrqmVIIhK_Ibpd33LdhfqKpz5koyTdTbT2SCQ" />
+<meta name="description" content="@_seoDescricao" />
+<link rel="canonical" href="@_seoUrlAtual" />
+
+<meta property="og:site_name" content="Projeta" />
+<meta property="og:type" content="@_seoTipo" />
+<meta property="og:title" content="@_seoTitulo" />
+<meta property="og:description" content="@_seoDescricao" />
+<meta property="og:url" content="@_seoUrlAtual" />
+<meta property="og:image" content="@_seoImagem" />
+<meta property="og:locale" content="pt_BR" />
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="@_seoTitulo" />
+<meta name="twitter:description" content="@_seoDescricao" />
+<meta name="twitter:image" content="@_seoImagem" />
+
+@if (ViewData["SemJsonLd"] is not true)
+{
+    <script type="application/ld+json">
+    {
+        "@@context": "https://schema.org",
+        "@@type": "Organization",
+        "name": "Projeta",
+        "description": "@Html.Raw(System.Text.Json.JsonEncodedText.Encode(_seoDescricaoPadrao))",
+        "url": "@($"{ViewContext.HttpContext.Request.Scheme}://{ViewContext.HttpContext.Request.Host}")",
+        "logo": "@($"{ViewContext.HttpContext.Request.Scheme}://{ViewContext.HttpContext.Request.Host}/img/simbolo.png")"
+    }
+    </script>
+}

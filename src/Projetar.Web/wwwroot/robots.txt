@@ -1,0 +1,9 @@
+User-agent: *
+Disallow: /Admin/
+Disallow: /Moderacao/
+Disallow: /Conta/
+Disallow: /Historico/
+Disallow: /Principios/Gerenciar
+Allow: /
+
+Sitemap: https://projeta.ong.br/sitemap.xml

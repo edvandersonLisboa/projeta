@@ -127,6 +127,40 @@ app.MapGet("/api/notificacoes/resumo", async (
     return Results.Ok(new { totalNaoLidas, itens });
 }).RequireAuthorization();
 
+// Sitemap dinâmico — só o que é público (princípio e item visíveis, item aprovado). Gerado a
+// cada requisição a partir do banco em vez de arquivo estático, pra nunca ficar desatualizado.
+app.MapGet("/sitemap.xml", async (HttpContext http, ApplicationDbContext db) =>
+{
+    var baseUrl = $"{http.Request.Scheme}://{http.Request.Host}";
+
+    var itens = await db.Itens
+        .Where(i => i.Visivel && i.Principio!.Visivel &&
+            (i.Status == ItemStatus.Original || i.Status == ItemStatus.Aprovado))
+        .Select(i => new { i.Slug, i.DataAtualizacao })
+        .AsNoTracking()
+        .ToListAsync();
+
+    var paginasEstaticas = new[] { "", "Sobre", "Ideias" };
+
+    var xml = new System.Text.StringBuilder();
+    xml.Append("""<?xml version="1.0" encoding="UTF-8"?>""");
+    xml.Append("""<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">""");
+
+    foreach (var pagina in paginasEstaticas)
+    {
+        xml.Append($"<url><loc>{baseUrl}/{pagina}</loc><changefreq>weekly</changefreq></url>");
+    }
+
+    foreach (var item in itens)
+    {
+        xml.Append($"<url><loc>{baseUrl}/Itens/{item.Slug}</loc><lastmod>{item.DataAtualizacao:yyyy-MM-dd}</lastmod><changefreq>monthly</changefreq></url>");
+    }
+
+    xml.Append("</urlset>");
+
+    return Results.Text(xml.ToString(), "application/xml");
+});
+
 using (var scope = app.Services.CreateScope())
 {
     await DbInitializer.RunAsync(scope.ServiceProvider);
