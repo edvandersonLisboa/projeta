@@ -21,19 +21,19 @@ public class GerenciarModel(
 {
     public const int IntroMaxLength = 500;
 
-    public List<Mandamento> Todos { get; set; } = [];
-    public Mandamento? Atual { get; set; }
+    public List<Principio> Todos { get; set; } = [];
+    public Principio? Atual { get; set; }
     public List<Item> ItensDoAtual { get; set; } = [];
 
     /// <summary>Lista completa (sem filtro de escopo) — só para calcular a numeração pública real,
     /// que não pode mudar conforme o que um revisor específico enxerga.</summary>
-    private List<Mandamento> TodosParaNumeracao { get; set; } = [];
+    private List<Principio> TodosParaNumeracao { get; set; } = [];
 
     public bool EhAdmin { get; set; }
 
-    /// <summary>Ids de princípios em que o usuário tem escopo de MANDAMENTO inteiro — só esses aceitam
+    /// <summary>Ids de princípios em que o usuário tem escopo de PRINCÍPIO inteiro — só esses aceitam
     /// "criar item"/"mover item para" quando quem está logado é Revisor.</summary>
-    public List<int> MandamentosModeraveis { get; set; } = [];
+    public List<int> PrincipiosModeraveis { get; set; } = [];
 
     public string Filtro { get; set; } = "all";
     public string? Busca { get; set; }
@@ -48,12 +48,12 @@ public class GerenciarModel(
     public int TotalItensPublicados => Todos.Where(m => m.Visivel).Sum(m => m.Itens.Count(i => i.Visivel));
     public int TotalItensOcultos => Todos.Sum(m => m.Itens.Count(i => !i.Visivel));
 
-    public bool PodeCriarItemNoAtual => EhAdmin || (Atual is not null && MandamentosModeraveis.Contains(Atual.Id));
+    public bool PodeCriarItemNoAtual => EhAdmin || (Atual is not null && PrincipiosModeraveis.Contains(Atual.Id));
 
     /// <summary>Número que o público vê — só princípio visível ganha número, e é sequencial só entre os visíveis.
     /// Um princípio oculto não "gasta" um número: se o 3 estiver oculto, o próximo visível continua sendo o 3.
     /// Calculado sempre contra a lista completa, não contra o que um Revisor escopado enxerga.</summary>
-    public int? NumeroPublico(Mandamento m)
+    public int? NumeroPublico(Principio m)
     {
         if (!m.Visivel)
         {
@@ -75,7 +75,7 @@ public class GerenciarModel(
         return null;
     }
 
-    public static string ItensMeta(Mandamento m)
+    public static string ItensMeta(Principio m)
     {
         var off = m.Itens.Count(i => !i.Visivel);
         var s = m.Itens.Count == 1 ? "1 item" : $"{m.Itens.Count} itens";
@@ -98,7 +98,7 @@ public class GerenciarModel(
     {
         EhAdmin = User.IsInRole("Admin");
 
-        var todosGlobal = await db.Mandamentos
+        var todosGlobal = await db.Principios
             .Include(m => m.Itens.Where(i => i.Status == ItemStatus.Original || i.Status == ItemStatus.Aprovado).OrderBy(i => i.Ordem))
             .OrderBy(m => m.Ordem)
             .AsNoTracking()
@@ -106,18 +106,18 @@ public class GerenciarModel(
 
         TodosParaNumeracao = todosGlobal;
         Todos = todosGlobal;
-        MandamentosModeraveis = todosGlobal.Select(m => m.Id).ToList();
+        PrincipiosModeraveis = todosGlobal.Select(m => m.Id).ToList();
 
         if (!EhAdmin)
         {
             var usuarioId = userManager.GetUserId(User)!;
-            var mandamentosModeraveis = await permissoes.ListarMandamentosModeraveisAsync(usuarioId);
+            var principiosModeraveis = await permissoes.ListarPrincipiosModeraveisAsync(usuarioId);
             var itensModeraveis = await permissoes.ListarItensModeraveisAsync(usuarioId);
 
-            MandamentosModeraveis = mandamentosModeraveis;
+            PrincipiosModeraveis = principiosModeraveis;
 
             Todos = todosGlobal
-                .Where(m => mandamentosModeraveis.Contains(m.Id) || m.Itens.Any(i => itensModeraveis.Contains(i.Id)))
+                .Where(m => principiosModeraveis.Contains(m.Id) || m.Itens.Any(i => itensModeraveis.Contains(i.Id)))
                 .ToList();
 
             foreach (var m in Todos)
@@ -160,14 +160,14 @@ public class GerenciarModel(
         return usuarioId is not null && await permissoes.PodeModerarItemAsync(usuarioId, itemId);
     }
 
-    private async Task<bool> PodeGerenciarMandamentoAsync(int mandamentoId)
+    private async Task<bool> PodeGerenciarPrincipioAsync(int principioId)
     {
         if (User.IsInRole("Admin"))
         {
             return true;
         }
         var usuarioId = userManager.GetUserId(User);
-        return usuarioId is not null && await permissoes.PodeModerarMandamentoAsync(usuarioId, mandamentoId);
+        return usuarioId is not null && await permissoes.PodeModerarPrincipioAsync(usuarioId, principioId);
     }
 
     private async Task<Guid[]> FiltrarIdsPermitidosAsync(Guid[] ids)
@@ -186,7 +186,7 @@ public class GerenciarModel(
     }
 
     /// <summary>Cria um princípio novo, além dos originais — nasce oculto do público até o admin publicar. Admin apenas.</summary>
-    public async Task<IActionResult> OnPostCriarMandamentoAsync(string subtitulo, string secular, string intro, int? principioId, string? filtro, string? busca)
+    public async Task<IActionResult> OnPostCriarPrincipioAsync(string subtitulo, string secular, string intro, int? principioId, string? filtro, string? busca)
     {
         if (!User.IsInRole("Admin"))
         {
@@ -213,10 +213,10 @@ public class GerenciarModel(
             return Page();
         }
 
-        var proximoId = await db.Mandamentos.Select(m => (int?)m.Id).MaxAsync() ?? 0;
-        var proximaOrdem = await db.Mandamentos.Select(m => (int?)m.Ordem).MaxAsync() ?? 0;
+        var proximoId = await db.Principios.Select(m => (int?)m.Id).MaxAsync() ?? 0;
+        var proximaOrdem = await db.Principios.Select(m => (int?)m.Ordem).MaxAsync() ?? 0;
 
-        var mandamento = new Mandamento
+        var principio = new Principio
         {
             Id = proximoId + 1,
             Subtitulo = subtitulo.Trim(),
@@ -225,18 +225,18 @@ public class GerenciarModel(
             Ordem = proximaOrdem + 1,
             Visivel = false,
         };
-        db.Mandamentos.Add(mandamento);
+        db.Principios.Add(principio);
         await db.SaveChangesAsync();
 
         var admin = await userManager.GetUserAsync(User);
         await notificacoes.NotificarModeradoresAsync(
             TipoNotificacao.SecaoCriada,
             "Novo princípio criado",
-            $"{admin?.Nome ?? "Um admin"} criou o princípio {mandamento.Id} ({mandamento.Secular}).",
-            null, mandamento.Id, "/Secoes/Gerenciar", admin?.Id);
+            $"{admin?.Nome ?? "Um admin"} criou o princípio {principio.Id} ({principio.Secular}).",
+            null, principio.Id, "/Secoes/Gerenciar", admin?.Id);
 
-        TempData["MensagemSucesso"] = $"Princípio {mandamento.Id} criado — ele começa oculto do público até você publicar.";
-        return RedirectToPage(new { principioId = mandamento.Id });
+        TempData["MensagemSucesso"] = $"Princípio {principio.Id} criado — ele começa oculto do público até você publicar.";
+        return RedirectToPage(new { principioId = principio.Id });
     }
 
     /// <summary>Sobe (-1) ou desce (+1) um princípio na ordem, trocando de posição com o vizinho. Admin apenas.</summary>
@@ -247,7 +247,7 @@ public class GerenciarModel(
             return Forbid();
         }
 
-        var todos = await db.Mandamentos.OrderBy(m => m.Ordem).ToListAsync();
+        var todos = await db.Principios.OrderBy(m => m.Ordem).ToListAsync();
         var idx = todos.FindIndex(m => m.Id == id);
         var destino = idx + direcao;
         if (idx < 0 || destino < 0 || destino >= todos.Count)
@@ -270,25 +270,25 @@ public class GerenciarModel(
             return Forbid();
         }
 
-        var mandamento = await db.Mandamentos.FirstOrDefaultAsync(m => m.Id == id);
-        if (mandamento is null)
+        var principio = await db.Principios.FirstOrDefaultAsync(m => m.Id == id);
+        if (principio is null)
         {
             return NotFound();
         }
 
-        mandamento.Visivel = !mandamento.Visivel;
+        principio.Visivel = !principio.Visivel;
         await db.SaveChangesAsync();
 
         var admin = await userManager.GetUserAsync(User);
         await notificacoes.NotificarModeradoresAsync(
             TipoNotificacao.SecaoVisibilidadeAlterada,
             "Visibilidade de seção alterada",
-            $"{admin?.Nome ?? "Um admin"} {(mandamento.Visivel ? "tornou visível" : "ocultou")} o mandamento {mandamento.Id} ({mandamento.Secular}).",
-            null, mandamento.Id, "/Secoes/Gerenciar", admin?.Id);
+            $"{admin?.Nome ?? "Um admin"} {(principio.Visivel ? "tornou visível" : "ocultou")} o princípio {principio.Id} ({principio.Secular}).",
+            null, principio.Id, "/Secoes/Gerenciar", admin?.Id);
 
-        TempData["MensagemSucesso"] = mandamento.Visivel
-            ? $"Princípio {mandamento.Id} agora está visível ao público."
-            : $"Princípio {mandamento.Id} agora está oculto do público.";
+        TempData["MensagemSucesso"] = principio.Visivel
+            ? $"Princípio {principio.Id} agora está visível ao público."
+            : $"Princípio {principio.Id} agora está oculto do público.";
         return RedirectToPage(new { principioId = id });
     }
 
@@ -300,8 +300,8 @@ public class GerenciarModel(
             return Forbid();
         }
 
-        var mandamento = await db.Mandamentos.FirstOrDefaultAsync(m => m.Id == id);
-        if (mandamento is null)
+        var principio = await db.Principios.FirstOrDefaultAsync(m => m.Id == id);
+        if (principio is null)
         {
             return NotFound();
         }
@@ -318,19 +318,19 @@ public class GerenciarModel(
             return RedirectToPage(new { principioId = id });
         }
 
-        mandamento.Subtitulo = subtitulo.Trim();
-        mandamento.Secular = secular.Trim();
-        mandamento.Intro = intro.Trim();
+        principio.Subtitulo = subtitulo.Trim();
+        principio.Secular = secular.Trim();
+        principio.Intro = intro.Trim();
         await db.SaveChangesAsync();
 
         var admin = await userManager.GetUserAsync(User);
         await notificacoes.NotificarModeradoresAsync(
             TipoNotificacao.SecaoEditada,
             "Seção editada",
-            $"{admin?.Nome ?? "Um admin"} editou os textos do mandamento {mandamento.Id} ({mandamento.Secular}).",
-            null, mandamento.Id, "/Secoes/Gerenciar", admin?.Id);
+            $"{admin?.Nome ?? "Um admin"} editou os textos do princípio {principio.Id} ({principio.Secular}).",
+            null, principio.Id, "/Secoes/Gerenciar", admin?.Id);
 
-        TempData["MensagemSucesso"] = $"Textos do princípio {mandamento.Id} atualizados.";
+        TempData["MensagemSucesso"] = $"Textos do princípio {principio.Id} atualizados.";
         return RedirectToPage(new { principioId = id });
     }
 
@@ -378,7 +378,7 @@ public class GerenciarModel(
         }
 
         var irmaos = await db.Itens
-            .Where(i => i.MandamentoId == item.MandamentoId && (i.Status == ItemStatus.Original || i.Status == ItemStatus.Aprovado))
+            .Where(i => i.PrincipioId == item.PrincipioId && (i.Status == ItemStatus.Original || i.Status == ItemStatus.Aprovado))
             .OrderBy(i => i.Ordem)
             .ToListAsync();
         var idx = irmaos.FindIndex(i => i.Id == id);
@@ -396,10 +396,10 @@ public class GerenciarModel(
     }
 
     /// <summary>Cria um item novo só com título, oculto por padrão — pra estruturar rápido e preencher o texto depois em "Editar item".
-    /// Exige escopo de MANDAMENTO inteiro (não dá pra "criar" dentro de um escopo de item específico que ainda não existe).</summary>
-    public async Task<IActionResult> OnPostCriarItemRapidoAsync(int mandamentoId, string titulo)
+    /// Exige escopo de PRINCÍPIO inteiro (não dá pra "criar" dentro de um escopo de item específico que ainda não existe).</summary>
+    public async Task<IActionResult> OnPostCriarItemRapidoAsync(int principioId, string titulo)
     {
-        if (!await PodeGerenciarMandamentoAsync(mandamentoId))
+        if (!await PodeGerenciarPrincipioAsync(principioId))
         {
             return Forbid();
         }
@@ -407,11 +407,11 @@ public class GerenciarModel(
         if (string.IsNullOrWhiteSpace(titulo))
         {
             TempData["MensagemErro"] = "Dê um título para o item.";
-            return RedirectToPage(new { principioId = mandamentoId });
+            return RedirectToPage(new { principioId = principioId });
         }
 
-        var mandamento = await db.Mandamentos.FindAsync(mandamentoId);
-        if (mandamento is null)
+        var principio = await db.Principios.FindAsync(principioId);
+        if (principio is null)
         {
             return NotFound();
         }
@@ -429,12 +429,12 @@ public class GerenciarModel(
             sufixo++;
         }
 
-        var proximaOrdem = await db.Itens.Where(i => i.MandamentoId == mandamentoId).Select(i => (int?)i.Ordem).MaxAsync() ?? 0;
+        var proximaOrdem = await db.Itens.Where(i => i.PrincipioId == principioId).Select(i => (int?)i.Ordem).MaxAsync() ?? 0;
         var admin = await userManager.GetUserAsync(User);
 
         db.Itens.Add(new Item
         {
-            MandamentoId = mandamentoId,
+            PrincipioId = principioId,
             Slug = slug,
             Titulo = titulo.Trim(),
             Corpo = "<p>Texto a definir.</p>",
@@ -446,28 +446,28 @@ public class GerenciarModel(
         await db.SaveChangesAsync();
 
         TempData["MensagemSucesso"] = "Item criado como oculto — edite o texto quando quiser.";
-        return RedirectToPage(new { principioId = mandamentoId });
+        return RedirectToPage(new { principioId = principioId });
     }
 
     /// <summary>Move um único item, disparado pelo menu "⋮" da própria linha — separado do lote pra não
     /// depender de quais checkboxes estão marcados no restante da lista. Exige poder gerenciar o item de
-    /// origem e ter escopo de MANDAMENTO inteiro sobre o destino.</summary>
-    public async Task<IActionResult> OnPostMoverItemAsync(Guid id, int principioId, int novoMandamentoId)
+    /// origem e ter escopo de PRINCÍPIO inteiro sobre o destino.</summary>
+    public async Task<IActionResult> OnPostMoverItemAsync(Guid id, int principioId, int novoPrincipioId)
     {
         var item = await db.Itens.FirstOrDefaultAsync(i => i.Id == id);
-        var destino = await db.Mandamentos.FirstOrDefaultAsync(m => m.Id == novoMandamentoId);
+        var destino = await db.Principios.FirstOrDefaultAsync(m => m.Id == novoPrincipioId);
         if (item is null || destino is null)
         {
             return NotFound();
         }
 
-        if (!await PodeGerenciarItemAsync(id) || !await PodeGerenciarMandamentoAsync(novoMandamentoId))
+        if (!await PodeGerenciarItemAsync(id) || !await PodeGerenciarPrincipioAsync(novoPrincipioId))
         {
             return Forbid();
         }
 
-        var proximaOrdem = await db.Itens.Where(i => i.MandamentoId == novoMandamentoId).Select(i => (int?)i.Ordem).MaxAsync() ?? 0;
-        item.MandamentoId = novoMandamentoId;
+        var proximaOrdem = await db.Itens.Where(i => i.PrincipioId == novoPrincipioId).Select(i => (int?)i.Ordem).MaxAsync() ?? 0;
+        item.PrincipioId = novoPrincipioId;
         item.Ordem = proximaOrdem + 1;
         item.DataAtualizacao = DateTimeOffset.UtcNow;
         await db.SaveChangesAsync();
@@ -480,7 +480,7 @@ public class GerenciarModel(
             item.Id, null, $"/Itens/{item.Slug}", admin?.Id);
 
         TempData["MensagemSucesso"] = $"Item \"{item.Titulo}\" movido para o princípio {destino.Id} — {destino.Secular}.";
-        return RedirectToPage(new { principioId = novoMandamentoId });
+        return RedirectToPage(new { principioId = novoPrincipioId });
     }
 
     public async Task<IActionResult> OnPostMostrarSelecionadosAsync(Guid[] ids, int principioId)
@@ -512,36 +512,36 @@ public class GerenciarModel(
     }
 
     /// <summary>Move um ou mais itens (seleção em lote ou um só via menu da linha) pra outro princípio.
-    /// Exige escopo de MANDAMENTO inteiro sobre o destino; cada item movido também passa pelo filtro de
+    /// Exige escopo de PRINCÍPIO inteiro sobre o destino; cada item movido também passa pelo filtro de
     /// itens que o usuário pode gerenciar.</summary>
-    public async Task<IActionResult> OnPostMoverSelecionadosAsync(Guid[] ids, int principioId, int novoMandamentoId)
+    public async Task<IActionResult> OnPostMoverSelecionadosAsync(Guid[] ids, int principioId, int novoPrincipioId)
     {
-        var destino = await db.Mandamentos.FirstOrDefaultAsync(m => m.Id == novoMandamentoId);
+        var destino = await db.Principios.FirstOrDefaultAsync(m => m.Id == novoPrincipioId);
         if (destino is null || ids.Length == 0)
         {
             TempData["MensagemErro"] = "Escolha um princípio de destino válido.";
             return RedirectToPage(new { principioId });
         }
 
-        if (!await PodeGerenciarMandamentoAsync(novoMandamentoId))
+        if (!await PodeGerenciarPrincipioAsync(novoPrincipioId))
         {
             return Forbid();
         }
 
         var idsPermitidos = await FiltrarIdsPermitidosAsync(ids);
-        var itens = await db.Itens.Include(i => i.Mandamento).Where(i => idsPermitidos.Contains(i.Id)).ToListAsync();
+        var itens = await db.Itens.Include(i => i.Principio).Where(i => idsPermitidos.Contains(i.Id)).ToListAsync();
         if (itens.Count == 0)
         {
             TempData["MensagemErro"] = "Nenhum dos itens selecionados pode ser movido por você.";
             return RedirectToPage(new { principioId });
         }
 
-        var proximaOrdem = await db.Itens.Where(i => i.MandamentoId == novoMandamentoId).Select(i => (int?)i.Ordem).MaxAsync() ?? 0;
+        var proximaOrdem = await db.Itens.Where(i => i.PrincipioId == novoPrincipioId).Select(i => (int?)i.Ordem).MaxAsync() ?? 0;
 
         foreach (var item in itens)
         {
             proximaOrdem++;
-            item.MandamentoId = novoMandamentoId;
+            item.PrincipioId = novoPrincipioId;
             item.Ordem = proximaOrdem;
             item.DataAtualizacao = DateTimeOffset.UtcNow;
         }
@@ -561,6 +561,6 @@ public class GerenciarModel(
         TempData["MensagemSucesso"] = itens.Count == 1
             ? $"Item movido para o princípio {destino.Id} — {destino.Secular}."
             : $"{itens.Count} itens movidos para o princípio {destino.Id} — {destino.Secular}.";
-        return RedirectToPage(new { principioId = novoMandamentoId });
+        return RedirectToPage(new { principioId = novoPrincipioId });
     }
 }

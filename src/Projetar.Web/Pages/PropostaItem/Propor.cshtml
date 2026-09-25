@@ -1,4 +1,4 @@
-@page "/Mandamentos/{mandamentoId:int}/Propor"
+@page "/Principios/{principioId:int}/Propor"
 @model Projetar.Web.Pages.PropostaItem.ProporModel
 @{
     Layout = "_LayoutPj";
@@ -8,7 +8,7 @@
 
 <div class="pj-shell pj-breadcrumb">
     <a href="/">Início</a><span class="sep">/</span>
-    <a href="/#principio-@Model.MandamentoAtual.Id">Princípio @Model.MandamentoAtual.Id</a><span class="sep">/</span>
+    <a href="/#principio-@Model.PrincipioAtual.Id">Princípio @Model.PrincipioAtual.Id</a><span class="sep">/</span>
     <span class="current">Propor novo item</span>
 </div>
 
@@ -52,9 +52,9 @@
 
             @* ---------- Cabeçalho ---------- *@
             <div class="pj-edit-head">
-                <span class="pj-chip-green">Princípio @Model.MandamentoAtual.Id</span>
+                <span class="pj-chip-green">Princípio @Model.PrincipioAtual.Id</span>
                 <h1>Propor novo item</h1>
-                <p class="sub">"@Model.MandamentoAtual.Secular"</p>
+                <p class="sub">"@Model.PrincipioAtual.Secular"</p>
                 <div class="pj-edit-info">
                     <span class="i">i</span>
                     <div>

@@ -12,10 +12,10 @@ public class SubmissaoModeracaoService(ApplicationDbContext db) : ISubmissaoMode
 
         var itens = await db.Itens
             .Where(i => i.CriadoPorUsuarioId == usuarioId)
-            .Include(i => i.Mandamento)
+            .Include(i => i.Principio)
             .AsNoTracking()
             .ToListAsync();
-        lista.AddRange(itens.Where(i => i.Mandamento is not null).Select(MapearItem));
+        lista.AddRange(itens.Where(i => i.Principio is not null).Select(MapearItem));
 
         var revisoes = await db.ItemRevisoes
             .Where(r => r.AutorUsuarioId == usuarioId)
@@ -72,8 +72,8 @@ public class SubmissaoModeracaoService(ApplicationDbContext db) : ISubmissaoMode
             switch (grupo.Key)
             {
                 case TipoSubmissao.Item:
-                    var itens = await db.Itens.Where(i => ids.Contains(i.Id)).Include(i => i.Mandamento).AsNoTracking().ToListAsync();
-                    lista.AddRange(itens.Where(i => i.Mandamento is not null).Select(MapearItem));
+                    var itens = await db.Itens.Where(i => ids.Contains(i.Id)).Include(i => i.Principio).AsNoTracking().ToListAsync();
+                    lista.AddRange(itens.Where(i => i.Principio is not null).Select(MapearItem));
                     break;
                 case TipoSubmissao.EdicaoTexto:
                     var revisoes = await db.ItemRevisoes.Where(r => ids.Contains(r.Id)).Include(r => r.Item).AsNoTracking().ToListAsync();
@@ -126,8 +126,8 @@ public class SubmissaoModeracaoService(ApplicationDbContext db) : ISubmissaoMode
 
     private async Task<SubmissaoResumo?> ObterItemAsync(Guid id)
     {
-        var item = await db.Itens.Include(i => i.Mandamento).AsNoTracking().FirstOrDefaultAsync(i => i.Id == id);
-        return item?.Mandamento is null ? null : MapearItem(item);
+        var item = await db.Itens.Include(i => i.Principio).AsNoTracking().FirstOrDefaultAsync(i => i.Id == id);
+        return item?.Principio is null ? null : MapearItem(item);
     }
 
     private async Task<SubmissaoResumo?> ObterRevisaoAsync(Guid id)
@@ -212,7 +212,7 @@ public class SubmissaoModeracaoService(ApplicationDbContext db) : ISubmissaoMode
             ItemTitulo = item.Titulo,
             ItemSlug = item.Slug,
             TipoRotulo = "Item novo",
-            Resumo = $"Item proposto para o princípio {item.Mandamento!.Id}",
+            Resumo = $"Item proposto para o princípio {item.Principio!.Id}",
             StatusRotulo = rotulo,
             Situacao = situacao,
             DataCriacao = item.DataCriacao,

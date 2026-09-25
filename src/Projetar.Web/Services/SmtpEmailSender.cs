@@ -11,7 +11,7 @@ public class SmtpOptions
     public string User { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;
     public string FromEmail { get; set; } = string.Empty;
-    public string FromName { get; set; } = "Projeto Brasil — 10 Mandamentos";
+    public string FromName { get; set; } = "Projeta";
     public bool EnableSsl { get; set; } = true;
 }
 

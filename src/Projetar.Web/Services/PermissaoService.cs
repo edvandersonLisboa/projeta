@@ -20,13 +20,13 @@ public class PermissaoService(ApplicationDbContext db, UserManager<ApplicationUs
         return await db.EscoposModeracao.AnyAsync(e => e.UsuarioId == usuarioId &&
             e.Status == StatusEscopoModeracao.Aceito &&
             ((e.TipoEscopo == TipoEscopoModeracao.Item && e.ItemId == itemId) ||
-             (e.TipoEscopo == TipoEscopoModeracao.Mandamento && e.MandamentoId == item.MandamentoId)));
+             (e.TipoEscopo == TipoEscopoModeracao.Principio && e.PrincipioId == item.PrincipioId)));
     }
 
-    public async Task<bool> PodeModerarMandamentoAsync(string usuarioId, int mandamentoId) =>
+    public async Task<bool> PodeModerarPrincipioAsync(string usuarioId, int principioId) =>
         await db.EscoposModeracao.AnyAsync(e => e.UsuarioId == usuarioId &&
             e.Status == StatusEscopoModeracao.Aceito &&
-            e.TipoEscopo == TipoEscopoModeracao.Mandamento && e.MandamentoId == mandamentoId);
+            e.TipoEscopo == TipoEscopoModeracao.Principio && e.PrincipioId == principioId);
 
     public async Task<bool> EhModeradorDeAlgoAsync(string usuarioId, bool ehAdmin)
     {
@@ -49,52 +49,52 @@ public class PermissaoService(ApplicationDbContext db, UserManager<ApplicationUs
             .Select(e => e.ItemId!.Value)
             .ToList();
 
-        var mandamentoIds = escopos.Where(e => e.TipoEscopo == TipoEscopoModeracao.Mandamento && e.MandamentoId.HasValue)
-            .Select(e => e.MandamentoId!.Value)
+        var principioIds = escopos.Where(e => e.TipoEscopo == TipoEscopoModeracao.Principio && e.PrincipioId.HasValue)
+            .Select(e => e.PrincipioId!.Value)
             .ToList();
 
-        if (mandamentoIds.Count > 0)
+        if (principioIds.Count > 0)
         {
-            var itensDoMandamento = await db.Itens
-                .Where(i => mandamentoIds.Contains(i.MandamentoId))
+            var itensDoPrincipio = await db.Itens
+                .Where(i => principioIds.Contains(i.PrincipioId))
                 .Select(i => i.Id)
                 .ToListAsync();
-            itensDiretos.AddRange(itensDoMandamento);
+            itensDiretos.AddRange(itensDoPrincipio);
         }
 
         return itensDiretos.Distinct().ToList();
     }
 
-    public async Task<List<int>> ListarMandamentosModeraveisAsync(string usuarioId) =>
+    public async Task<List<int>> ListarPrincipiosModeraveisAsync(string usuarioId) =>
         await db.EscoposModeracao
             .Where(e => e.UsuarioId == usuarioId && e.Status == StatusEscopoModeracao.Aceito &&
-                        e.TipoEscopo == TipoEscopoModeracao.Mandamento && e.MandamentoId.HasValue)
-            .Select(e => e.MandamentoId!.Value)
+                        e.TipoEscopo == TipoEscopoModeracao.Principio && e.PrincipioId.HasValue)
+            .Select(e => e.PrincipioId!.Value)
             .Distinct()
             .ToListAsync();
 
-    public async Task<List<string>> ListarUsuarioIdsComEscopoSobreItemAsync(Guid itemId, int mandamentoId) =>
+    public async Task<List<string>> ListarUsuarioIdsComEscopoSobreItemAsync(Guid itemId, int principioId) =>
         await db.EscoposModeracao
             .Where(e => (e.TipoEscopo == TipoEscopoModeracao.Item && e.ItemId == itemId) ||
-                        (e.TipoEscopo == TipoEscopoModeracao.Mandamento && e.MandamentoId == mandamentoId))
+                        (e.TipoEscopo == TipoEscopoModeracao.Principio && e.PrincipioId == principioId))
             .Select(e => e.UsuarioId)
             .Distinct()
             .ToListAsync();
 
-    public async Task<List<string>> ListarUsuarioIdsComEscopoSobreMandamentoAsync(int mandamentoId)
+    public async Task<List<string>> ListarUsuarioIdsComEscopoSobrePrincipioAsync(int principioId)
     {
         var diretos = await db.EscoposModeracao
-            .Where(e => e.TipoEscopo == TipoEscopoModeracao.Mandamento && e.MandamentoId == mandamentoId)
+            .Where(e => e.TipoEscopo == TipoEscopoModeracao.Principio && e.PrincipioId == principioId)
             .Select(e => e.UsuarioId)
             .ToListAsync();
 
-        var itensDoMandamento = await db.Itens
-            .Where(i => i.MandamentoId == mandamentoId)
+        var itensDoPrincipio = await db.Itens
+            .Where(i => i.PrincipioId == principioId)
             .Select(i => i.Id)
             .ToListAsync();
 
         var porItem = await db.EscoposModeracao
-            .Where(e => e.TipoEscopo == TipoEscopoModeracao.Item && e.ItemId.HasValue && itensDoMandamento.Contains(e.ItemId.Value))
+            .Where(e => e.TipoEscopo == TipoEscopoModeracao.Item && e.ItemId.HasValue && itensDoPrincipio.Contains(e.ItemId.Value))
             .Select(e => e.UsuarioId)
             .ToListAsync();
 
@@ -111,9 +111,9 @@ public class PermissaoService(ApplicationDbContext db, UserManager<ApplicationUs
 
         return await db.EscoposModeracao
             .Where(e => (e.TipoEscopo == TipoEscopoModeracao.Item && e.ItemId == itemId) ||
-                        (e.TipoEscopo == TipoEscopoModeracao.Mandamento && e.MandamentoId == item.MandamentoId))
+                        (e.TipoEscopo == TipoEscopoModeracao.Principio && e.PrincipioId == item.PrincipioId))
             .Include(e => e.Usuario)
-            .Include(e => e.Mandamento)
+            .Include(e => e.Principio)
             .OrderBy(e => e.DataCriacao)
             .AsNoTracking()
             .ToListAsync();
@@ -122,7 +122,7 @@ public class PermissaoService(ApplicationDbContext db, UserManager<ApplicationUs
     public async Task<List<EscopoModeracao>> ListarEscoposDoUsuarioAsync(string usuarioId) =>
         await db.EscoposModeracao
             .Where(e => e.UsuarioId == usuarioId)
-            .Include(e => e.Mandamento)
+            .Include(e => e.Principio)
             .Include(e => e.Item)
             .OrderBy(e => e.DataCriacao)
             .AsNoTracking()
@@ -131,7 +131,7 @@ public class PermissaoService(ApplicationDbContext db, UserManager<ApplicationUs
     public async Task<List<EscopoModeracao>> ListarTodosEscoposAsync() =>
         await db.EscoposModeracao
             .Include(e => e.Usuario)
-            .Include(e => e.Mandamento)
+            .Include(e => e.Principio)
             .Include(e => e.Item)
             .Include(e => e.AdicionadoPorUsuario)
             .OrderByDescending(e => e.DataCriacao)
@@ -161,10 +161,10 @@ public class PermissaoService(ApplicationDbContext db, UserManager<ApplicationUs
         return (true, null);
     }
 
-    public async Task<(bool Sucesso, string? Erro)> ConcederEscopoMandamentoAsync(string usuarioId, int mandamentoId, string concedidoPorId)
+    public async Task<(bool Sucesso, string? Erro)> ConcederEscopoPrincipioAsync(string usuarioId, int principioId, string concedidoPorId)
     {
         var jaTem = await db.EscoposModeracao.AnyAsync(e =>
-            e.UsuarioId == usuarioId && e.TipoEscopo == TipoEscopoModeracao.Mandamento && e.MandamentoId == mandamentoId);
+            e.UsuarioId == usuarioId && e.TipoEscopo == TipoEscopoModeracao.Principio && e.PrincipioId == principioId);
         if (jaTem)
         {
             return (false, "Esse usuário já modera este princípio.");
@@ -173,8 +173,8 @@ public class PermissaoService(ApplicationDbContext db, UserManager<ApplicationUs
         db.EscoposModeracao.Add(new EscopoModeracao
         {
             UsuarioId = usuarioId,
-            TipoEscopo = TipoEscopoModeracao.Mandamento,
-            MandamentoId = mandamentoId,
+            TipoEscopo = TipoEscopoModeracao.Principio,
+            PrincipioId = principioId,
             AdicionadoPorUsuarioId = concedidoPorId,
             Status = StatusEscopoModeracao.Aceito,
         });

@@ -7,9 +7,9 @@ namespace Projetar.Web.Services;
 public interface INotificacaoService
 {
     /// <summary>Notifica quem modera o assunto: Admin sempre recebe; Revisor só recebe se tiver escopo sobre
-    /// o item (ou, na ausência de item, sobre o princípio informado em mandamentoId). Sem item nem princípio,
+    /// o item (ou, na ausência de item, sobre o princípio informado em principioId). Sem item nem princípio,
     /// cai no comportamento antigo de notificar todo Revisor — evite deixar os dois nulos quando der.</summary>
-    Task NotificarModeradoresAsync(TipoNotificacao tipo, string titulo, string mensagem, Guid? itemId, int? mandamentoId, string? linkUrl, string? usuarioOrigemId);
+    Task NotificarModeradoresAsync(TipoNotificacao tipo, string titulo, string mensagem, Guid? itemId, int? principioId, string? linkUrl, string? usuarioOrigemId);
 
     /// <summary>Notifica um usuário específico — não faz nada se ele for o próprio autor da ação.</summary>
     Task NotificarUsuarioAsync(string usuarioDestinoId, TipoNotificacao tipo, string titulo, string mensagem, Guid? itemId, string? linkUrl, string? usuarioOrigemId);

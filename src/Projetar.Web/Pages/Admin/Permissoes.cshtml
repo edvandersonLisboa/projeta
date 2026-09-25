@@ -75,16 +75,16 @@
     </div>
     <div class="gbr-field">
         <label class="gbr-label">Tipo de escopo</label>
-        <select name="tipoEscopo" class="gbr-select" onchange="document.getElementById('campoMandamento').hidden = this.value !== 'Mandamento'; document.getElementById('campoItem').hidden = this.value !== 'Item';">
-            <option value="Mandamento">Princípio inteiro</option>
+        <select name="tipoEscopo" class="gbr-select" onchange="document.getElementById('campoPrincipio').hidden = this.value !== 'Principio'; document.getElementById('campoItem').hidden = this.value !== 'Item';">
+            <option value="Principio">Princípio inteiro</option>
             <option value="Item">Item específico</option>
         </select>
     </div>
-    <div class="gbr-field" id="campoMandamento">
+    <div class="gbr-field" id="campoPrincipio">
         <label class="gbr-label">Princípio</label>
-        <select name="mandamentoId" class="gbr-select">
+        <select name="principioId" class="gbr-select">
             <option value="">Escolha o princípio...</option>
-            @foreach (var m in Model.TodosMandamentos)
+            @foreach (var m in Model.TodosPrincipios)
             {
                 <option value="@m.Id">Princípio @m.Id — @m.Secular</option>
             }
@@ -96,7 +96,7 @@
             <option value="">Escolha o item...</option>
             @foreach (var i in Model.TodosItens)
             {
-                <option value="@i.Id">Princípio @i.Mandamento!.Id — @i.Titulo</option>
+                <option value="@i.Id">Princípio @i.Principio!.Id — @i.Titulo</option>
             }
         </select>
     </div>
@@ -118,9 +118,9 @@
                 <span>
                     <strong>@(e.Usuario?.NomeCompleto ?? "Usuário removido")</strong>
                     modera
-                    @if (e.TipoEscopo == TipoEscopoModeracao.Mandamento)
+                    @if (e.TipoEscopo == TipoEscopoModeracao.Principio)
                     {
-                        <span>o princípio <strong>@e.MandamentoId — @e.Mandamento?.Secular</strong></span>
+                        <span>o princípio <strong>@e.PrincipioId — @e.Principio?.Secular</strong></span>
                     }
                     else
                     {

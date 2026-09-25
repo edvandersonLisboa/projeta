@@ -25,17 +25,17 @@ public class BuscaModel(ApplicationDbContext db) : PageModel
         var termo = $"%{Q}%";
 
         var query = db.Itens
-            .Include(i => i.Mandamento)
+            .Include(i => i.Principio)
             .Include(i => i.CriadoPorUsuario)
             .Where(i => i.Status == ItemStatus.Original || i.Status == ItemStatus.Aprovado)
             .Where(i => EF.Functions.ILike(i.Titulo, termo)
                      || EF.Functions.ILike(i.Corpo, termo)
-                     || EF.Functions.ILike(i.Mandamento!.Secular, termo)
+                     || EF.Functions.ILike(i.Principio!.Secular, termo)
                      || (i.Tags != null && EF.Functions.ILike(i.Tags, termo)));
 
         if (!EhAdmin)
         {
-            query = query.Where(i => i.Visivel && i.Mandamento!.Visivel);
+            query = query.Where(i => i.Visivel && i.Principio!.Visivel);
         }
 
         Resultados = await query

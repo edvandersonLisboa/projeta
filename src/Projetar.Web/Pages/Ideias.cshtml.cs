@@ -16,14 +16,14 @@ public class IdeiasModel(ApplicationDbContext db) : PageModel
         EhAdmin = User.IsInRole("Admin");
 
         var query = db.Itens
-            .Include(i => i.Mandamento)
+            .Include(i => i.Principio)
             .Include(i => i.CriadoPorUsuario)
             .Where(i => i.Status == ItemStatus.Original || i.Status == ItemStatus.Aprovado)
             .AsQueryable();
 
         if (!EhAdmin)
         {
-            query = query.Where(i => i.Visivel && i.Mandamento!.Visivel);
+            query = query.Where(i => i.Visivel && i.Principio!.Visivel);
         }
 
         Itens = await query

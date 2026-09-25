@@ -63,7 +63,7 @@
                         <div class="pj-mod-card__body">
                             <div class="pj-mod-card__meta">
                                 <span class="pj-type pj-type--edit">Edição de texto</span>
-                                <span class="ctx">Princípio @revisao.Item!.Mandamento!.Id</span>
+                                <span class="ctx">Princípio @revisao.Item!.Principio!.Id</span>
                                 <span class="grow"></span>
                                 <span class="age @(EhAntigo(revisao.DataRevisao) ? "is-old" : "")">@TempoRelativo.Formatar(revisao.DataRevisao)</span>
                             </div>
@@ -152,12 +152,12 @@
                     <summary class="pj-btn pj-btn--outline-navy pj-btn--sm">+ Propor novo item</summary>
                     <form method="post" asp-page-handler="CriarItem" class="gbr-card gbr-stack" style="margin-top:12px;max-width:640px;padding:18px;">
                         <div class="gbr-field">
-                            <label class="gbr-label" asp-for="NovoItemProposto.MandamentoId">Princípio</label>
-                            <select class="gbr-select" asp-for="NovoItemProposto.MandamentoId">
+                            <label class="gbr-label" asp-for="NovoItemProposto.PrincipioId">Princípio</label>
+                            <select class="gbr-select" asp-for="NovoItemProposto.PrincipioId">
                                 <option value="">Escolha o princípio...</option>
-                                @foreach (var mandamento in Model.TodosMandamentos)
+                                @foreach (var principio in Model.TodosPrincipios)
                                 {
-                                    <option value="@mandamento.Id">Princípio @mandamento.Id — @mandamento.Secular</option>
+                                    <option value="@principio.Id">Princípio @principio.Id — @principio.Secular</option>
                                 }
                             </select>
                         </div>
@@ -181,7 +181,7 @@
                         <div class="pj-mod-card__body">
                             <div class="pj-mod-card__meta">
                                 <span class="pj-type pj-type--item">Novo item</span>
-                                <span class="ctx">Princípio @item.Mandamento!.Id — @item.Mandamento.Secular</span>
+                                <span class="ctx">Princípio @item.Principio!.Id — @item.Principio.Secular</span>
                                 <span class="grow"></span>
                                 <span class="age @(EhAntigo(item.DataCriacao) ? "is-old" : "")">@TempoRelativo.Formatar(item.DataCriacao)</span>
                             </div>
@@ -228,7 +228,7 @@
                                 <option value="">Escolha o item...</option>
                                 @foreach (var item in Model.TodosItens)
                                 {
-                                    <option value="@item.Id">Princípio @item.Mandamento!.Id — @item.Titulo</option>
+                                    <option value="@item.Id">Princípio @item.Principio!.Id — @item.Titulo</option>
                                 }
                             </select>
                         </div>
@@ -256,7 +256,7 @@
                         <div class="pj-mod-card__body">
                             <div class="pj-mod-card__meta">
                                 <span class="pj-type pj-type--ref">Referência</span>
-                                <span class="ctx">Princípio @referencia.Item!.Mandamento!.Id — @referencia.Item.Titulo</span>
+                                <span class="ctx">Princípio @referencia.Item!.Principio!.Id — @referencia.Item.Titulo</span>
                                 <span class="grow"></span>
                                 <span class="age @(EhAntigo(referencia.DataCriacao) ? "is-old" : "")">@TempoRelativo.Formatar(referencia.DataCriacao)</span>
                             </div>
@@ -306,7 +306,7 @@
                                 <option value="">Escolha o item...</option>
                                 @foreach (var item in Model.TodosItens)
                                 {
-                                    <option value="@item.Id">Princípio @item.Mandamento!.Id — @item.Titulo</option>
+                                    <option value="@item.Id">Princípio @item.Principio!.Id — @item.Titulo</option>
                                 }
                             </select>
                         </div>
@@ -326,7 +326,7 @@
                         <div class="pj-mod-card__body">
                             <div class="pj-mod-card__meta">
                                 <span class="pj-type pj-type--doc">Documento</span>
-                                <span class="ctx">Princípio @documento.Item!.Mandamento!.Id — @documento.Item.Titulo</span>
+                                <span class="ctx">Princípio @documento.Item!.Principio!.Id — @documento.Item.Titulo</span>
                                 <span class="grow"></span>
                                 <span class="age @(EhAntigo(documento.DataUpload) ? "is-old" : "")">@TempoRelativo.Formatar(documento.DataUpload)</span>
                             </div>
@@ -369,7 +369,7 @@
                         <div class="pj-mod-card__body">
                             <div class="pj-mod-card__meta">
                                 <span class="pj-type pj-type--tag">Tag</span>
-                                <span class="ctx">Princípio @sugestao.Item!.Mandamento!.Id — @sugestao.Item.Titulo</span>
+                                <span class="ctx">Princípio @sugestao.Item!.Principio!.Id — @sugestao.Item.Titulo</span>
                                 <span class="grow"></span>
                                 <span class="age @(EhAntigo(sugestao.DataCriacao) ? "is-old" : "")">@TempoRelativo.Formatar(sugestao.DataCriacao)</span>
                             </div>
@@ -413,7 +413,7 @@
                         <div class="pj-mod-card__body">
                             <div class="pj-mod-card__meta">
                                 <span class="pj-type pj-type--banner">Banner</span>
-                                <span class="ctx">Princípio @sugestao.Item!.Mandamento!.Id — @sugestao.Item.Titulo</span>
+                                <span class="ctx">Princípio @sugestao.Item!.Principio!.Id — @sugestao.Item.Titulo</span>
                                 <span class="grow"></span>
                                 <span class="age @(EhAntigo(sugestao.DataCriacao) ? "is-old" : "")">@TempoRelativo.Formatar(sugestao.DataCriacao)</span>
                             </div>

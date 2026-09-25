@@ -7,11 +7,11 @@
     <div class="gbr-itemcard__imagem" @(!string.IsNullOrWhiteSpace(Model.BannerImagem) ? Html.Raw($"style=\"background-image:url('{Model.BannerImagem}')\"") : null)>
         @if (string.IsNullOrWhiteSpace(Model.BannerImagem))
         {
-            <span class="gbr-itemcard__numeral" aria-hidden="true">@Model.Mandamento!.Id</span>
+            <span class="gbr-itemcard__numeral" aria-hidden="true">@Model.Principio!.Id</span>
         }
     </div>
     <div class="gbr-itemcard__corpo">
-        <span class="gbr-eyebrow">Princípio @Model.Mandamento!.Id</span>
+        <span class="gbr-eyebrow">Princípio @Model.Principio!.Id</span>
         <span class="gbr-itemcard__titulo">@Model.Titulo</span>
         <span class="gbr-itemcard__autor">Por @autor</span>
     </div>

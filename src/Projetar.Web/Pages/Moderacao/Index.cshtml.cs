@@ -122,8 +122,8 @@ public class IndexModel(
     /// <summary>Todos os itens visíveis publicamente — pra escolher o alvo ao criar referência/documento direto na moderação.</summary>
     public List<Item> TodosItens { get; set; } = [];
 
-    /// <summary>Todos os mandamentos — pra escolher onde entra um item proposto direto na moderação.</summary>
-    public List<Mandamento> TodosMandamentos { get; set; } = [];
+    /// <summary>Todos os princípios — pra escolher onde entra um item proposto direto na moderação.</summary>
+    public List<Principio> TodosPrincipios { get; set; } = [];
 
     [BindProperty]
     public AprovarInput Aprovar { get; set; } = new();
@@ -198,7 +198,7 @@ public class IndexModel(
     public class NovoItemInput
     {
         [Required(ErrorMessage = "Escolha o princípio.")]
-        public int MandamentoId { get; set; }
+        public int PrincipioId { get; set; }
 
         [Required(ErrorMessage = "Dê um título para o item.")]
         [StringLength(200)]
@@ -229,17 +229,17 @@ public class IndexModel(
 
         // Admin vê tudo, sem filtro. Revisor só vê o que está no escopo dele (item direto ou princípio inteiro).
         List<Guid>? itensModeraveis = null;
-        List<int>? mandamentosModeraveis = null;
+        List<int>? principiosModeraveis = null;
         if (!EhAdmin)
         {
             itensModeraveis = await permissoes.ListarItensModeraveisAsync(usuario.Id);
-            mandamentosModeraveis = await permissoes.ListarMandamentosModeraveisAsync(usuario.Id);
+            principiosModeraveis = await permissoes.ListarPrincipiosModeraveisAsync(usuario.Id);
         }
 
         var pendentesQuery = db.ItemRevisoes.Where(r => r.Status == RevisaoStatus.Pendente);
         if (!EhAdmin) pendentesQuery = pendentesQuery.Where(r => itensModeraveis!.Contains(r.ItemId));
         Pendentes = await pendentesQuery
-            .Include(r => r.Item).ThenInclude(i => i!.Mandamento)
+            .Include(r => r.Item).ThenInclude(i => i!.Principio)
             .Include(r => r.AutorUsuario)
             .Include(r => r.Apoios)
             .OrderBy(r => r.DataRevisao)
@@ -249,7 +249,7 @@ public class IndexModel(
         var referenciasQuery = db.Referencias.Where(r => r.Status == RevisaoStatus.Pendente);
         if (!EhAdmin) referenciasQuery = referenciasQuery.Where(r => itensModeraveis!.Contains(r.ItemId));
         ReferenciasPendentes = await referenciasQuery
-            .Include(r => r.Item).ThenInclude(i => i!.Mandamento)
+            .Include(r => r.Item).ThenInclude(i => i!.Principio)
             .Include(r => r.Usuario)
             .OrderBy(r => r.DataCriacao)
             .AsNoTracking()
@@ -258,7 +258,7 @@ public class IndexModel(
         var documentosQuery = db.Documentos.Where(d => d.Status == RevisaoStatus.Pendente);
         if (!EhAdmin) documentosQuery = documentosQuery.Where(d => itensModeraveis!.Contains(d.ItemId));
         DocumentosPendentes = await documentosQuery
-            .Include(d => d.Item).ThenInclude(i => i!.Mandamento)
+            .Include(d => d.Item).ThenInclude(i => i!.Principio)
             .Include(d => d.Usuario)
             .OrderBy(d => d.DataUpload)
             .AsNoTracking()
@@ -266,9 +266,9 @@ public class IndexModel(
 
         // Item novo ainda não existe como alvo de escopo próprio — só entra pelo escopo de princípio.
         var itensPropostosQuery = db.Itens.Where(i => i.Status == ItemStatus.PropostaComunidade);
-        if (!EhAdmin) itensPropostosQuery = itensPropostosQuery.Where(i => mandamentosModeraveis!.Contains(i.MandamentoId));
+        if (!EhAdmin) itensPropostosQuery = itensPropostosQuery.Where(i => principiosModeraveis!.Contains(i.PrincipioId));
         ItensPropostos = await itensPropostosQuery
-            .Include(i => i.Mandamento)
+            .Include(i => i.Principio)
             .Include(i => i.CriadoPorUsuario)
             .OrderBy(i => i.DataCriacao)
             .AsNoTracking()
@@ -277,7 +277,7 @@ public class IndexModel(
         var tagsQuery = db.TagSugestoes.Where(t => t.Status == RevisaoStatus.Pendente);
         if (!EhAdmin) tagsQuery = tagsQuery.Where(t => itensModeraveis!.Contains(t.ItemId));
         TagsPendentes = await tagsQuery
-            .Include(t => t.Item).ThenInclude(i => i!.Mandamento)
+            .Include(t => t.Item).ThenInclude(i => i!.Principio)
             .Include(t => t.Usuario)
             .OrderBy(t => t.DataCriacao)
             .AsNoTracking()
@@ -286,23 +286,23 @@ public class IndexModel(
         var bannersQuery = db.BannerSugestoes.Where(b => b.Status == RevisaoStatus.Pendente);
         if (!EhAdmin) bannersQuery = bannersQuery.Where(b => itensModeraveis!.Contains(b.ItemId));
         BannersPendentes = await bannersQuery
-            .Include(b => b.Item).ThenInclude(i => i!.Mandamento)
+            .Include(b => b.Item).ThenInclude(i => i!.Principio)
             .Include(b => b.Usuario)
             .OrderBy(b => b.DataCriacao)
             .AsNoTracking()
             .ToListAsync();
 
         var todosItensQuery = db.Itens.Where(i => i.Status == ItemStatus.Original || i.Status == ItemStatus.Aprovado);
-        if (!EhAdmin) todosItensQuery = todosItensQuery.Where(i => mandamentosModeraveis!.Contains(i.MandamentoId) || itensModeraveis!.Contains(i.Id));
+        if (!EhAdmin) todosItensQuery = todosItensQuery.Where(i => principiosModeraveis!.Contains(i.PrincipioId) || itensModeraveis!.Contains(i.Id));
         TodosItens = await todosItensQuery
-            .Include(i => i.Mandamento)
-            .OrderBy(i => i.Mandamento!.Ordem).ThenBy(i => i.Ordem)
+            .Include(i => i.Principio)
+            .OrderBy(i => i.Principio!.Ordem).ThenBy(i => i.Ordem)
             .AsNoTracking()
             .ToListAsync();
 
-        TodosMandamentos = EhAdmin
-            ? await db.Mandamentos.OrderBy(m => m.Ordem).AsNoTracking().ToListAsync()
-            : await db.Mandamentos.Where(m => mandamentosModeraveis!.Contains(m.Id)).OrderBy(m => m.Ordem).AsNoTracking().ToListAsync();
+        TodosPrincipios = EhAdmin
+            ? await db.Principios.OrderBy(m => m.Ordem).AsNoTracking().ToListAsync()
+            : await db.Principios.Where(m => principiosModeraveis!.Contains(m.Id)).OrderBy(m => m.Ordem).AsNoTracking().ToListAsync();
 
         Conversas = await submissoes.ListarComConversaAsync();
         if (!EhAdmin)
@@ -622,7 +622,7 @@ public class IndexModel(
             return RedirectToPage();
         }
 
-        if (!User.IsInRole("Admin") && !await permissoes.PodeModerarMandamentoAsync(userManager.GetUserId(User)!, item.MandamentoId))
+        if (!User.IsInRole("Admin") && !await permissoes.PodeModerarPrincipioAsync(userManager.GetUserId(User)!, item.PrincipioId))
         {
             return Forbid();
         }
@@ -646,7 +646,7 @@ public class IndexModel(
                 item.Id, $"/Itens/{item.Slug}", moderador?.Id);
         }
 
-        TempData["MensagemSucesso"] = "Item aprovado e publicado no mandamento.";
+        TempData["MensagemSucesso"] = "Item aprovado e publicado no princípio.";
         return RedirectToPage();
     }
 
@@ -664,7 +664,7 @@ public class IndexModel(
             return RedirectToPage();
         }
 
-        if (!User.IsInRole("Admin") && !await permissoes.PodeModerarMandamentoAsync(userManager.GetUserId(User)!, item.MandamentoId))
+        if (!User.IsInRole("Admin") && !await permissoes.PodeModerarPrincipioAsync(userManager.GetUserId(User)!, item.PrincipioId))
         {
             return Forbid();
         }
@@ -814,13 +814,13 @@ public class IndexModel(
             return RedirectToPage();
         }
 
-        var mandamento = await db.Mandamentos.FindAsync(NovoItemProposto.MandamentoId);
-        if (mandamento is null)
+        var principio = await db.Principios.FindAsync(NovoItemProposto.PrincipioId);
+        if (principio is null)
         {
             return RedirectToPage();
         }
 
-        if (!User.IsInRole("Admin") && !await permissoes.PodeModerarMandamentoAsync(userManager.GetUserId(User)!, mandamento.Id))
+        if (!User.IsInRole("Admin") && !await permissoes.PodeModerarPrincipioAsync(userManager.GetUserId(User)!, principio.Id))
         {
             return Forbid();
         }
@@ -841,13 +841,13 @@ public class IndexModel(
         }
 
         var proximaOrdem = await db.Itens
-            .Where(i => i.MandamentoId == mandamento.Id)
+            .Where(i => i.PrincipioId == principio.Id)
             .Select(i => (int?)i.Ordem)
             .MaxAsync() ?? 0;
 
         var novoItem = new Item
         {
-            MandamentoId = mandamento.Id,
+            PrincipioId = principio.Id,
             Slug = slug,
             Titulo = NovoItemProposto.Titulo.Trim(),
             Corpo = NovoItemProposto.Corpo,
@@ -861,7 +861,7 @@ public class IndexModel(
         await notificacoes.NotificarModeradoresAsync(
             TipoNotificacao.NovoItemProposto,
             "Novo item proposto",
-            $"{moderador.Nome} propôs o item \"{novoItem.Titulo}\" em \"{mandamento.Secular}\".",
+            $"{moderador.Nome} propôs o item \"{novoItem.Titulo}\" em \"{principio.Secular}\".",
             novoItem.Id, null, "/Moderacao/Index", moderador.Id);
 
         TempData["MensagemSucesso"] = "Item proposto — aguardando aprovação, igual aos da comunidade.";

@@ -12,7 +12,7 @@ public class IndexModel(
     IContentRenderer content,
     UserManager<ApplicationUser> userManager) : PageModel
 {
-    public List<Mandamento> MandamentosList { get; set; } = [];
+    public List<Principio> PrincipiosList { get; set; } = [];
     public bool PodeParticipar { get; set; }
     public bool EhAdmin { get; set; }
     public Dictionary<Guid, AvaliacaoResumo> AvaliacoesPorItem { get; set; } = [];
@@ -21,10 +21,10 @@ public class IndexModel(
 
     public string Excerpt(Item item) => content.ToExcerpt(item.Corpo);
 
-    public int TotalMedidas => MandamentosList.Sum(m => m.Itens.Count);
-    public int TotalAvaliadas => MandamentosList.Sum(m => m.Itens.Count(i => AvaliacoesPorItem.ContainsKey(i.Id)));
+    public int TotalMedidas => PrincipiosList.Sum(m => m.Itens.Count);
+    public int TotalAvaliadas => PrincipiosList.Sum(m => m.Itens.Count(i => AvaliacoesPorItem.ContainsKey(i.Id)));
 
-    public string CountLabel(Mandamento m)
+    public string CountLabel(Principio m)
     {
         if (m.Itens.Count == 0)
         {
@@ -39,13 +39,13 @@ public class IndexModel(
     {
         EhAdmin = User.IsInRole("Admin");
 
-        var query = db.Mandamentos.AsQueryable();
+        var query = db.Principios.AsQueryable();
         if (!EhAdmin)
         {
             query = query.Where(m => m.Visivel);
         }
 
-        MandamentosList = await query
+        PrincipiosList = await query
             .Include(m => m.Itens
                 .Where(i => (i.Status == ItemStatus.Original || i.Status == ItemStatus.Aprovado) && (EhAdmin || i.Visivel))
                 .OrderBy(i => i.Ordem))

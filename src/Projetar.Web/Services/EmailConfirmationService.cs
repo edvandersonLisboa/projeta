@@ -31,7 +31,7 @@ public class EmailConfirmationService(ApplicationDbContext db, IEmailSender emai
             <p style="font-size:28px;font-weight:bold;letter-spacing:4px;">{codigo}</p>
             <p>Ele expira em {CodigoVerificacao.Validade.TotalMinutes:0} minutos. Se você não pediu esse código, ignore este e-mail.</p>
             """;
-        await emailSender.SendEmailAsync(usuario.Email!, "Confirme seu e-mail — 10 Mandamentos", corpo);
+        await emailSender.SendEmailAsync(usuario.Email!, "Confirme seu e-mail — Projeta", corpo);
     }
 
     public async Task<ConfirmacaoCodigoResultado> ConfirmarAsync(ApplicationUser usuario, string codigoInformado)

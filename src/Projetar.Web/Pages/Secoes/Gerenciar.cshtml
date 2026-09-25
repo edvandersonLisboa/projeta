@@ -1,4 +1,4 @@
-@page "/Mandamentos/Gerenciar"
+@page "/Principios/Gerenciar"
 @model Projetar.Web.Pages.Secoes.GerenciarModel
 @using Projetar.Web.Models
 @{
@@ -191,7 +191,7 @@
                 {
                     <div id="novoItemRow" class="pj-sec-add" hidden>
                         <input type="text" name="titulo" placeholder="Título do novo item" />
-                        <input type="hidden" name="mandamentoId" value="@cur.Id" />
+                        <input type="hidden" name="principioId" value="@cur.Id" />
                         <button type="submit" asp-page-handler="CriarItemRapido" class="pj-btn pj-btn--green pj-btn--sm">Adicionar</button>
                         <button type="button" class="pj-link-btn" onclick="document.getElementById('novoItemRow').hidden = true">Cancelar</button>
                     </div>
@@ -202,10 +202,10 @@
                     <span class="grow"></span>
                     <button type="submit" asp-page-handler="MostrarSelecionados">Mostrar</button>
                     <button type="submit" asp-page-handler="OcultarSelecionados">Ocultar</button>
-                    @{ var destinos = Model.Todos.Where(t => t.Id != cur.Id && Model.MandamentosModeraveis.Contains(t.Id)).ToList(); }
+                    @{ var destinos = Model.Todos.Where(t => t.Id != cur.Id && Model.PrincipiosModeraveis.Contains(t.Id)).ToList(); }
                     @if (destinos.Count > 0)
                     {
-                        <select name="novoMandamentoId" onchange="if(this.value){this.form.action='?handler=MoverSelecionados&amp;principioId=@cur.Id';this.form.submit();}">
+                        <select name="novoPrincipioId" onchange="if(this.value){this.form.action='?handler=MoverSelecionados&amp;principioId=@cur.Id';this.form.submit();}">
                             <option value="">Mover para…</option>
                             @foreach (var t in destinos)
                             {
@@ -259,7 +259,7 @@
                             <a class="pj-icon-sq" href="/Itens/@item.Slug/Editar" title="Editar item">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
                             </a>
-                            @{ var destinosItem = Model.Todos.Where(t => t.Id != cur.Id && Model.MandamentosModeraveis.Contains(t.Id)).ToList(); }
+                            @{ var destinosItem = Model.Todos.Where(t => t.Id != cur.Id && Model.PrincipiosModeraveis.Contains(t.Id)).ToList(); }
                             @if (destinosItem.Count > 0)
                             {
                                 <details class="pj-sec-menu-wrap">
@@ -270,7 +270,7 @@
                                         <div class="label">Mover para</div>
                                         @foreach (var t in destinosItem)
                                         {
-                                            <button type="submit" asp-page-handler="MoverItem" asp-route-id="@item.Id" asp-route-principioId="@cur.Id" asp-route-novoMandamentoId="@t.Id">
+                                            <button type="submit" asp-page-handler="MoverItem" asp-route-id="@item.Id" asp-route-principioId="@cur.Id" asp-route-novoPrincipioId="@t.Id">
                                                 <span class="n">@(Model.NumeroPublico(t)?.ToString() ?? "–")</span><span>@t.Secular</span>
                                             </button>
                                         }
@@ -302,7 +302,7 @@
         <span class="pj-dialog__title">Novo princípio</span>
         <button type="button" class="pj-dialog__close" onclick="document.getElementById('modalNovoPrincipio').close()" aria-label="Fechar">&times;</button>
     </div>
-    <form method="post" asp-page-handler="CriarMandamento" class="gbr-stack">
+    <form method="post" asp-page-handler="CriarPrincipio" class="gbr-stack">
         <input type="hidden" name="principioId" value="@(cur?.Id)" />
         <input type="hidden" name="filtro" value="@Model.Filtro" />
         <input type="hidden" name="busca" value="@Model.Busca" />
