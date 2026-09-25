@@ -2,14 +2,14 @@
 @model Projetar.Web.Pages.Itens.EditarModel
 @{
     Layout = "_LayoutPj";
-    var mandamento = Model.ItemAtual.Mandamento!;
+    var principio = Model.ItemAtual.Principio!;
     ViewData["Title"] = $"Propor edição — {Model.ItemAtual.Titulo}";
     ViewData["NavAtivo"] = "Propostas";
 }
 
 <div class="pj-shell pj-breadcrumb">
     <a href="/">Início</a><span class="sep">/</span>
-    <a href="/">Princípio @mandamento.Id</a><span class="sep">/</span>
+    <a href="/">Princípio @principio.Id</a><span class="sep">/</span>
     <a href="/Itens/@Model.ItemAtual.Slug">@Model.ItemAtual.Titulo</a><span class="sep">/</span>
     <span class="current">Editar</span>
 </div>
@@ -87,7 +87,7 @@
 
         @* ---------- Cabeçalho ---------- *@
         <div class="pj-edit-head">
-            <span class="pj-chip-green">Princípio @mandamento.Id</span>
+            <span class="pj-chip-green">Princípio @principio.Id</span>
             <h1>Propor edição</h1>
             <p class="sub">"@Model.ItemAtual.Titulo"</p>
             <div class="pj-edit-info">

@@ -79,13 +79,13 @@ public class IndexModel(
     public List<Documento> Documentos { get; set; } = [];
 
     /// <summary>Outros princípios (até 4), cada um com o slug do seu primeiro item público — para a navegação lateral "Propostas".</summary>
-    public List<(Mandamento Mandamento, string? PrimeiroItemSlug)> OutrosPrincipios { get; set; } = [];
+    public List<(Principio Principio, string? PrimeiroItemSlug)> OutrosPrincipios { get; set; } = [];
 
     /// <summary>Até 4 itens de outros princípios, para a seção "Veja também".</summary>
     public List<Item> VejaTambem { get; set; } = [];
 
     /// <summary>Próximo princípio na ordem — usado no botão "Princípio N →". Null se este for o último.</summary>
-    public Mandamento? ProximoPrincipio { get; set; }
+    public Principio? ProximoPrincipio { get; set; }
     public string? ProximoPrincipioUrl { get; set; }
 
     /// <summary>Tags já usadas em outros itens (e ainda não aplicadas neste) — mostradas no modal "adicionar tag" para reaproveitar em vez de duplicar.</summary>
@@ -133,12 +133,12 @@ public class IndexModel(
         OrdemContrib = ordemContrib == "recentes" ? "recentes" : "contribuicoes";
 
         var item = await db.Itens
-            .Include(i => i.Mandamento)
+            .Include(i => i.Principio)
             .Include(i => i.CriadoPorUsuario)
             .AsNoTracking()
             .FirstOrDefaultAsync(i => i.Slug == slug);
 
-        if (item is null || item.Mandamento is null)
+        if (item is null || item.Principio is null)
         {
             return NotFound();
         }
@@ -158,7 +158,7 @@ public class IndexModel(
             MeuConviteModeracaoPendente = await permissoes.ObterConvitePendenteItemAsync(usuario.Id, item.Id);
         }
 
-        if ((!item.Mandamento.Visivel || !item.Visivel) && !User.IsInRole("Admin"))
+        if ((!item.Principio.Visivel || !item.Visivel) && !User.IsInRole("Admin"))
         {
             return NotFound();
         }
@@ -812,7 +812,7 @@ public class IndexModel(
     private async Task<IActionResult> ReconstruirPaginaAsync(Item item, ApplicationUser usuario)
     {
         ItemAtual = item;
-        ItemAtual.Mandamento = await db.Mandamentos.FindAsync(item.MandamentoId);
+        ItemAtual.Principio = await db.Principios.FindAsync(item.PrincipioId);
         CorpoHtml = content.ToSafeHtml(item.Corpo);
         UsuarioAtualId = usuario.Id;
         UsuarioAtualEhModerador = User.IsInRole("Admin") || await permissoes.PodeModerarItemAsync(usuario.Id, item.Id);
@@ -1018,14 +1018,14 @@ public class IndexModel(
     {
         var ehAdmin = User.IsInRole("Admin");
 
-        var mandamentosQuery = db.Mandamentos.AsQueryable();
+        var principiosQuery = db.Principios.AsQueryable();
         if (!ehAdmin)
         {
-            mandamentosQuery = mandamentosQuery.Where(m => m.Visivel);
+            principiosQuery = principiosQuery.Where(m => m.Visivel);
         }
 
-        var outrosMandamentos = await mandamentosQuery
-            .Where(m => m.Id != item.MandamentoId)
+        var outrosPrincipios = await principiosQuery
+            .Where(m => m.Id != item.PrincipioId)
             .Include(m => m.Itens
                 .Where(i => (i.Status == ItemStatus.Original || i.Status == ItemStatus.Aprovado) && (ehAdmin || i.Visivel))
                 .OrderBy(i => i.Ordem))
@@ -1033,12 +1033,12 @@ public class IndexModel(
             .AsNoTracking()
             .ToListAsync();
 
-        OutrosPrincipios = outrosMandamentos
+        OutrosPrincipios = outrosPrincipios
             .Take(4)
             .Select(m => (m, m.Itens.FirstOrDefault()?.Slug))
             .ToList();
 
-        VejaTambem = outrosMandamentos
+        VejaTambem = outrosPrincipios
             .Select(m => m.Itens.FirstOrDefault())
             .Where(i => i is not null)
             .Cast<Item>()
@@ -1046,11 +1046,11 @@ public class IndexModel(
             .ToList();
         foreach (var relacionado in VejaTambem)
         {
-            relacionado.Mandamento = outrosMandamentos.First(m => m.Id == relacionado.MandamentoId);
+            relacionado.Principio = outrosPrincipios.First(m => m.Id == relacionado.PrincipioId);
         }
 
-        ProximoPrincipio = outrosMandamentos.FirstOrDefault(m => m.Ordem > item.Mandamento!.Ordem)
-            ?? outrosMandamentos.OrderBy(m => m.Ordem).FirstOrDefault();
+        ProximoPrincipio = outrosPrincipios.FirstOrDefault(m => m.Ordem > item.Principio!.Ordem)
+            ?? outrosPrincipios.OrderBy(m => m.Ordem).FirstOrDefault();
         ProximoPrincipioUrl = ProximoPrincipio is null
             ? null
             : (ProximoPrincipio.Itens.FirstOrDefault()?.Slug is { } slug ? $"/Itens/{slug}" : "/");

@@ -6,14 +6,14 @@
 @{
     Layout = "_LayoutPj";
     var ptBr = CultureInfo.GetCultureInfo("pt-BR");
-    var mandamento = Model.ItemAtual.Mandamento!;
+    var principio = Model.ItemAtual.Principio!;
     var primeiroAutor = Model.Participantes.FirstOrDefault();
     var urlAtual = $"{ViewContext.HttpContext.Request.Scheme}://{ViewContext.HttpContext.Request.Host}{ViewContext.HttpContext.Request.Path}";
-    var citacaoTexto = $"{mandamento.Secular} Projeta — Decálogo Cívico Brasileiro, princípio {mandamento.Id}. Disponível em: {urlAtual}. Acesso em {DateTime.Now.ToString("d MMM'.' yyyy", ptBr)}.";
+    var citacaoTexto = $"{principio.Secular} Projeta — Decálogo Cívico Brasileiro, princípio {principio.Id}. Disponível em: {urlAtual}. Acesso em {DateTime.Now.ToString("d MMM'.' yyyy", ptBr)}.";
 
-    ViewData["Title"] = $"{Model.ItemAtual.Titulo} — Princípio {mandamento.Id}";
+    ViewData["Title"] = $"{Model.ItemAtual.Titulo} — Princípio {principio.Id}";
     ViewData["NavAtivo"] = "Propostas";
-    ViewData["TopbarContexto"] = $"Princípio {mandamento.Id} de 10";
+    ViewData["TopbarContexto"] = $"Princípio {principio.Id} de 10";
 }
 
 @* ---------- Breadcrumb ---------- *@
@@ -22,7 +22,7 @@
     <span class="sep">/</span>
     <a href="/">Propostas</a>
     <span class="sep">/</span>
-    <span class="current">@mandamento.Secular</span>
+    <span class="current">@principio.Secular</span>
 </div>
 
 @if (Model.ItemAtual.Status == ItemStatus.PropostaComunidade)
@@ -87,12 +87,12 @@ else if (Model.ItemAtual.Status == ItemStatus.Arquivado)
 @* ---------- Cabeçalho do artigo ---------- *@
 <div class="pj-shell" style="padding:18px 28px 0;">
     <header class="pj-card pj-article-head">
-        <span class="pj-chip-green">Princípio @mandamento.Id</span>
-        <h1>@mandamento.Secular</h1>
+        <span class="pj-chip-green">Princípio @principio.Id</span>
+        <h1>@principio.Secular</h1>
         <p class="sub">@Model.ItemAtual.Titulo</p>
 
         <div class="pj-article-meta">
-            <span class="strong">Princípio @mandamento.Id</span>
+            <span class="strong">Princípio @principio.Id</span>
             <span>&middot;</span>
             <span>@Model.ItemAtual.DataCriacao.ToLocalTime().ToString("d 'de' MMMM 'de' yyyy", ptBr)</span>
             @if (primeiroAutor is not null)
@@ -173,7 +173,7 @@ else if (Model.ItemAtual.Status == ItemStatus.Arquivado)
             <div class="pj-card__title">Autoria</div>
             <div class="pj-meta-list">
                 <div><b>Redação:</b> @(primeiroAutor?.NomeCompleto ?? "Redação")</div>
-                <div><b>Código do princípio:</b> @mandamento.Id de 10</div>
+                <div><b>Código do princípio:</b> @principio.Id de 10</div>
                 <div><b>Seção:</b> Decálogo Cívico Brasileiro</div>
             </div>
         </div>
@@ -245,7 +245,7 @@ else if (Model.ItemAtual.Status == ItemStatus.Arquivado)
         <div class="pj-card pj-card--pad">
             <div class="pj-card__title">Como citar este conteúdo</div>
             <p class="pj-note">
-                @mandamento.Secular <b>Projeta — Decálogo Cívico Brasileiro</b>, princípio @mandamento.Id.
+                @principio.Secular <b>Projeta — Decálogo Cívico Brasileiro</b>, princípio @principio.Id.
                 Disponível em: <i>@urlAtual</i>.
                 Acesso em @DateTime.Now.ToString("d MMM'.' yyyy", ptBr).
             </p>
@@ -609,11 +609,11 @@ else if (Model.ItemAtual.Status == ItemStatus.Arquivado)
                     <span>Propostas</span>
                     <a href="/">Ver todos</a>
                 </div>
-                @foreach (var principio in Model.OutrosPrincipios)
+                @foreach (var outroPrincipio in Model.OutrosPrincipios)
                 {
-                    <a href="@(principio.PrimeiroItemSlug is { } ps ? $"/Itens/{ps}" : "/")" class="pj-list-card__item">
-                        <div class="t">@principio.Mandamento.Secular</div>
-                        <div class="n">PRINCÍPIO @principio.Mandamento.Id</div>
+                    <a href="@(outroPrincipio.PrimeiroItemSlug is { } ps ? $"/Itens/{ps}" : "/")" class="pj-list-card__item">
+                        <div class="t">@outroPrincipio.Principio.Secular</div>
+                        <div class="n">PRINCÍPIO @outroPrincipio.Principio.Id</div>
                     </a>
                 }
             </div>
@@ -624,7 +624,7 @@ else if (Model.ItemAtual.Status == ItemStatus.Arquivado)
             <p>Publique sua proposta de mudança na lei e amplie o alcance da sua ideia na Projeta.</p>
             @if (Model.PodeParticipar)
             {
-                <a href="/Mandamentos/@Model.ItemAtual.MandamentoId/Propor" class="pj-btn pj-btn--gold pj-btn--block">Enviar minha ideia</a>
+                <a href="/Principios/@Model.ItemAtual.PrincipioId/Propor" class="pj-btn pj-btn--gold pj-btn--block">Enviar minha ideia</a>
             }
             else if (User.Identity?.IsAuthenticated == true)
             {
@@ -685,7 +685,7 @@ else if (Model.ItemAtual.Status == ItemStatus.Arquivado)
                             <li style="display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12.5px;color:var(--pj-navy);">
                                 <span>
                                     @(escopo.Usuario?.NomeCompleto ?? "Usuário removido")
-                                    @if (escopo.TipoEscopo == TipoEscopoModeracao.Mandamento)
+                                    @if (escopo.TipoEscopo == TipoEscopoModeracao.Principio)
                                     {
                                         <span class="pj-note" style="display:inline;">— princípio inteiro</span>
                                     }

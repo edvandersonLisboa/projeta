@@ -201,8 +201,8 @@
 [data-theme="claro"] .gbr-hero__logo--escuro { display: none; }
 [data-theme="escuro"] .gbr-hero__logo--claro { display: none; }
 
-/* ==== Accordion — mandamentos ======================================= */
-.mandamento {
+/* ==== Accordion — principios ======================================= */
+.principio {
   margin-bottom: var(--gbr-space-3);
   border: var(--gbr-border-width) solid var(--gbr-border);
   border-radius: var(--gbr-radius-lg);
@@ -210,11 +210,11 @@
   overflow: hidden;
   transition: border-color var(--gbr-dur) var(--gbr-ease), box-shadow var(--gbr-dur) var(--gbr-ease);
 }
-.mandamento:hover { border-color: var(--gbr-border-strong); }
-.mandamento.open { border-color: var(--gbr-primary); box-shadow: var(--gbr-shadow-sm); }
-.mandamento--oculto { border-style: dashed; opacity: 0.75; }
+.principio:hover { border-color: var(--gbr-border-strong); }
+.principio.open { border-color: var(--gbr-primary); box-shadow: var(--gbr-shadow-sm); }
+.principio--oculto { border-style: dashed; opacity: 0.75; }
 
-.mandamento-header {
+.principio-header {
   display: flex;
   align-items: center;
   gap: var(--gbr-space-4);
@@ -223,7 +223,7 @@
   user-select: none;
   transition: background var(--gbr-dur) var(--gbr-ease);
 }
-.mandamento-header:hover { background: var(--gbr-primary-soft); }
+.principio-header:hover { background: var(--gbr-primary-soft); }
 
 .numeral {
   width: 42px; height: 42px;
@@ -235,22 +235,22 @@
   flex-shrink: 0;
   transition: background var(--gbr-dur) var(--gbr-ease), color var(--gbr-dur) var(--gbr-ease);
 }
-.mandamento.open .numeral { background: var(--gbr-primary); color: var(--gbr-primary-contrast); }
+.principio.open .numeral { background: var(--gbr-primary); color: var(--gbr-primary-contrast); }
 
-.mandamento-title { flex: 1; min-width: 0; }
-.mandamento-title .biblical,
-.mandamento-title .principio-num {
+.principio-title { flex: 1; min-width: 0; }
+.principio-title .biblical,
+.principio-title .principio-num {
   font-size: var(--gbr-fs-sm); color: var(--gbr-text-muted);
   display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.mandamento-title .biblical { font-style: italic; }
-.mandamento-title .principio-num {
+.principio-title .biblical { font-style: italic; }
+.principio-title .principio-num {
   text-transform: uppercase; letter-spacing: .06em; font-weight: var(--gbr-fw-semibold);
 }
-.mandamento-title .secular {
+.principio-title .secular {
   font-size: var(--gbr-fs-body); font-weight: var(--gbr-fw-semibold); color: var(--gbr-text); display: block;
 }
-.mandamento.open .mandamento-title .secular { color: var(--gbr-primary); }
+.principio.open .principio-title .secular { color: var(--gbr-primary); }
 
 .arrow {
   width: 28px; height: 28px;
@@ -259,16 +259,16 @@
   transition: transform var(--gbr-dur) var(--gbr-ease), color var(--gbr-dur) var(--gbr-ease);
   flex-shrink: 0;
 }
-.mandamento.open .arrow { transform: rotate(180deg); color: var(--gbr-primary); }
+.principio.open .arrow { transform: rotate(180deg); color: var(--gbr-primary); }
 
-.mandamento-body { max-height: 0; overflow: hidden; transition: max-height 0.5s ease; }
-.mandamento.open .mandamento-body { max-height: 99999px; }
-.mandamento-content {
+.principio-body { max-height: 0; overflow: hidden; transition: max-height 0.5s ease; }
+.principio.open .principio-body { max-height: 99999px; }
+.principio-content {
   padding: 0 var(--gbr-space-6) var(--gbr-space-6) calc(42px + var(--gbr-space-6) + var(--gbr-space-4));
   color: var(--gbr-text-muted);
   font-size: var(--gbr-fs-sm);
 }
-.mandamento-content .intro { margin-bottom: var(--gbr-space-4); color: var(--gbr-text); line-height: var(--gbr-lh-normal); }
+.principio-content .intro { margin-bottom: var(--gbr-space-4); color: var(--gbr-text); line-height: var(--gbr-lh-normal); }
 
 /* Sub-item */
 .subitem {
@@ -319,7 +319,7 @@
 }
 .btn-ver-mais:hover { background: var(--gbr-primary); color: var(--gbr-primary-contrast); text-decoration: none; }
 
-.gbr-mandamento-propor { margin-top: var(--gbr-space-3); padding-left: 76px; }
+.gbr-principio-propor { margin-top: var(--gbr-space-3); padding-left: 76px; }
 
 .gbr-home-tagline {
   text-align: center;
@@ -497,7 +497,7 @@
 
 /* ==== Editor rich text (Quill) ======================================= */
 /* O quill.snow.css vem com cores fixas (ícones cinza, fundo branco) e é carregado depois
-   do mandamentos.css — por isso os !important, pra sobrepor a folha de estilo do Quill e
+   do principios.css — por isso os !important, pra sobrepor a folha de estilo do Quill e
    fazer o editor seguir os tokens do tema (claro/escuro) em vez de ficar sempre "claro". */
 .gbr-richtext-editor { background: var(--gbr-surface); border-radius: 0 0 var(--gbr-radius-md) var(--gbr-radius-md); }
 .gbr-richtext-editor .ql-editor { min-height: 260px; font-size: var(--gbr-fs-body); font-family: var(--gbr-font); color: var(--gbr-text) !important; }
@@ -783,7 +783,7 @@
 .gbr-sobre-pilares { list-style: none; margin: var(--gbr-space-6) 0 0; padding: 0; border-top: 1px solid var(--gbr-border); }
 .gbr-sobre-pilares li { display: flex; align-items: flex-start; gap: var(--gbr-space-4); padding: var(--gbr-space-4) 0; border-bottom: 1px solid var(--gbr-border); }
 .gbr-sobre-pilar-num { flex-shrink: 0; width: 2rem; font-weight: var(--gbr-fw-bold); font-size: var(--gbr-fs-sm); color: var(--gbr-text-muted); font-variant-numeric: tabular-nums; padding-top: 2px; }
-.gbr-sobre-pilares .mandamento-title { flex: 1; min-width: 0; }
+.gbr-sobre-pilares .principio-title { flex: 1; min-width: 0; }
 
 .gbr-sobre-quote {
   margin: var(--gbr-space-10) 0;
@@ -803,7 +803,7 @@
 .gbr-sobre-fechamento p:not(.gbr-h4) { max-width: 60ch; margin: 0 auto var(--gbr-space-6); }
 
 @media (max-width: 600px) {
-  .mandamento-content { padding: 0 var(--gbr-space-4) var(--gbr-space-4) 50px; }
+  .principio-content { padding: 0 var(--gbr-space-4) var(--gbr-space-4) 50px; }
   .gbr-item { padding: var(--gbr-space-6) var(--gbr-space-5); }
   .subitem-header { flex-wrap: wrap; }
   .subitem-votos { order: 3; width: 100%; margin-left: calc(var(--gbr-fs-sm) + var(--gbr-space-2)); }

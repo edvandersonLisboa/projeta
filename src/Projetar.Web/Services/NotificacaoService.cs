@@ -8,9 +8,9 @@ namespace Projetar.Web.Services;
 public class NotificacaoService(ApplicationDbContext db, UserManager<ApplicationUser> userManager, IPermissaoService permissoes) : INotificacaoService
 {
     /// <summary>Admin sempre recebe. Revisor só recebe quando tem escopo sobre o item (ou, na ausência de
-    /// item, sobre o princípio em mandamentoId). Só cai no broadcast pra todo Revisor quando nenhum dos
+    /// item, sobre o princípio em principioId). Só cai no broadcast pra todo Revisor quando nenhum dos
     /// dois é informado — não deveria mais acontecer, já que todo chamador tem pelo menos um dos dois.</summary>
-    public async Task NotificarModeradoresAsync(TipoNotificacao tipo, string titulo, string mensagem, Guid? itemId, int? mandamentoId, string? linkUrl, string? usuarioOrigemId)
+    public async Task NotificarModeradoresAsync(TipoNotificacao tipo, string titulo, string mensagem, Guid? itemId, int? principioId, string? linkUrl, string? usuarioOrigemId)
     {
         var admins = await userManager.GetUsersInRoleAsync("Admin");
         var destinatariosIds = admins.Select(u => u.Id).ToList();
@@ -20,12 +20,12 @@ public class NotificacaoService(ApplicationDbContext db, UserManager<Application
             var item = await db.Itens.AsNoTracking().FirstOrDefaultAsync(i => i.Id == id);
             if (item is not null)
             {
-                destinatariosIds.AddRange(await permissoes.ListarUsuarioIdsComEscopoSobreItemAsync(id, item.MandamentoId));
+                destinatariosIds.AddRange(await permissoes.ListarUsuarioIdsComEscopoSobreItemAsync(id, item.PrincipioId));
             }
         }
-        else if (mandamentoId is int mId)
+        else if (principioId is int mId)
         {
-            destinatariosIds.AddRange(await permissoes.ListarUsuarioIdsComEscopoSobreMandamentoAsync(mId));
+            destinatariosIds.AddRange(await permissoes.ListarUsuarioIdsComEscopoSobrePrincipioAsync(mId));
         }
         else
         {

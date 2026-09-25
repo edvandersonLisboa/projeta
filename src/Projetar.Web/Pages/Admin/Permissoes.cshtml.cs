@@ -21,7 +21,7 @@ public class PermissoesModel(
     public HashSet<string> AdminIds { get; set; } = [];
     public HashSet<string> RevisorIds { get; set; } = [];
     public List<EscopoModeracao> TodosEscopos { get; set; } = [];
-    public List<Mandamento> TodosMandamentos { get; set; } = [];
+    public List<Principio> TodosPrincipios { get; set; } = [];
     public List<Item> TodosItens { get; set; } = [];
 
     public int TotalUsuarios { get; set; }
@@ -43,11 +43,11 @@ public class PermissoesModel(
 
         TodosEscopos = await permissoes.ListarTodosEscoposAsync();
 
-        TodosMandamentos = await db.Mandamentos.OrderBy(m => m.Ordem).AsNoTracking().ToListAsync();
+        TodosPrincipios = await db.Principios.OrderBy(m => m.Ordem).AsNoTracking().ToListAsync();
         TodosItens = await db.Itens
             .Where(i => i.Status == ItemStatus.Original || i.Status == ItemStatus.Aprovado)
-            .Include(i => i.Mandamento)
-            .OrderBy(i => i.Mandamento!.Ordem).ThenBy(i => i.Ordem)
+            .Include(i => i.Principio)
+            .OrderBy(i => i.Principio!.Ordem).ThenBy(i => i.Ordem)
             .AsNoTracking()
             .ToListAsync();
     }
@@ -90,7 +90,7 @@ public class PermissoesModel(
         return RedirectToPage();
     }
 
-    public async Task<IActionResult> OnPostConcederEscopoAsync(string email, TipoEscopoModeracao tipoEscopo, int? mandamentoId, Guid? itemId)
+    public async Task<IActionResult> OnPostConcederEscopoAsync(string email, TipoEscopoModeracao tipoEscopo, int? principioId, Guid? itemId)
     {
         var atual = await userManager.GetUserAsync(User);
         var alvo = await userManager.FindByEmailAsync(email?.Trim() ?? string.Empty);
@@ -102,8 +102,8 @@ public class PermissoesModel(
 
         (bool Sucesso, string? Erro) resultado = tipoEscopo switch
         {
-            TipoEscopoModeracao.Mandamento when mandamentoId is int mId =>
-                await permissoes.ConcederEscopoMandamentoAsync(alvo.Id, mId, atual.Id),
+            TipoEscopoModeracao.Principio when principioId is int mId =>
+                await permissoes.ConcederEscopoPrincipioAsync(alvo.Id, mId, atual.Id),
             TipoEscopoModeracao.Item when itemId is Guid iId =>
                 await permissoes.ConcederEscopoItemAsync(alvo.Id, iId, atual.Id),
             _ => (false, "Escolha o princípio ou o item."),

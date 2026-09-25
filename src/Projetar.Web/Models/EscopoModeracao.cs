@@ -3,7 +3,7 @@ namespace Projetar.Web.Models;
 public enum TipoEscopoModeracao
 {
     /// <summary>Modera qualquer item do princípio, presente ou futuro.</summary>
-    Mandamento = 0,
+    Principio = 0,
 
     /// <summary>Modera só aquele item específico.</summary>
     Item = 1,
@@ -29,8 +29,8 @@ public class EscopoModeracao
 
     public TipoEscopoModeracao TipoEscopo { get; set; }
 
-    public int? MandamentoId { get; set; }
-    public Mandamento? Mandamento { get; set; }
+    public int? PrincipioId { get; set; }
+    public Principio? Principio { get; set; }
 
     public Guid? ItemId { get; set; }
     public Item? Item { get; set; }

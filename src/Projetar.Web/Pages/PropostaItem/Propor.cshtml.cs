@@ -22,7 +22,7 @@ public class ProporModel(
     private const long TamanhoMaximoImagemBytes = 5 * 1024 * 1024;
     private const int MaxTags = 5;
 
-    public Mandamento MandamentoAtual { get; set; } = null!;
+    public Principio PrincipioAtual { get; set; } = null!;
 
     /// <summary>Tags já usadas em qualquer item do site — sugeridas no formulário pra reaproveitar em vez de duplicar.</summary>
     public List<string> TagsSugeridas { get; set; } = [];
@@ -46,7 +46,7 @@ public class ProporModel(
         public string? BannerUrl { get; set; }
     }
 
-    public async Task<IActionResult> OnGetAsync(int mandamentoId)
+    public async Task<IActionResult> OnGetAsync(int principioId)
     {
         var usuario = await userManager.GetUserAsync(User);
         if (usuario is null || !usuario.PerfilCompleto)
@@ -54,18 +54,18 @@ public class ProporModel(
             return RedirectToPage("/Conta/CompletarPerfil");
         }
 
-        var mandamento = await db.Mandamentos.FindAsync(mandamentoId);
-        if (mandamento is null)
+        var principio = await db.Principios.FindAsync(principioId);
+        if (principio is null)
         {
             return NotFound();
         }
 
-        MandamentoAtual = mandamento;
+        PrincipioAtual = principio;
         await CarregarTagsSugeridasAsync();
         return Page();
     }
 
-    public async Task<IActionResult> OnPostAsync(int mandamentoId)
+    public async Task<IActionResult> OnPostAsync(int principioId)
     {
         var usuario = await userManager.GetUserAsync(User);
         if (usuario is null || !usuario.PerfilCompleto)
@@ -73,13 +73,13 @@ public class ProporModel(
             return RedirectToPage("/Conta/CompletarPerfil");
         }
 
-        var mandamento = await db.Mandamentos.FindAsync(mandamentoId);
-        if (mandamento is null)
+        var principio = await db.Principios.FindAsync(principioId);
+        if (principio is null)
         {
             return NotFound();
         }
 
-        MandamentoAtual = mandamento;
+        PrincipioAtual = principio;
 
         if (RichTextUtils.EhVazio(Input.Corpo))
         {
@@ -94,7 +94,7 @@ public class ProporModel(
 
         var slug = await GerarSlugUnicoAsync(Input.Titulo);
         var proximaOrdem = await db.Itens
-            .Where(i => i.MandamentoId == mandamentoId)
+            .Where(i => i.PrincipioId == principioId)
             .Select(i => (int?)i.Ordem)
             .MaxAsync() ?? 0;
 
@@ -106,7 +106,7 @@ public class ProporModel(
 
         var item = new Item
         {
-            MandamentoId = mandamentoId,
+            PrincipioId = principioId,
             Slug = slug,
             Titulo = Input.Titulo.Trim(),
             Corpo = Input.Corpo,
@@ -123,7 +123,7 @@ public class ProporModel(
         await notificacoes.NotificarModeradoresAsync(
             TipoNotificacao.NovoItemProposto,
             "Novo item proposto",
-            $"{usuario.Nome} propôs o item \"{item.Titulo}\" em \"{mandamento.Secular}\".",
+            $"{usuario.Nome} propôs o item \"{item.Titulo}\" em \"{principio.Secular}\".",
             item.Id, null, "/Moderacao/Index", usuario.Id);
 
         TempData["MensagemSucesso"] = "Item proposto! Ele fica visível só pra você até um revisor aprovar.";

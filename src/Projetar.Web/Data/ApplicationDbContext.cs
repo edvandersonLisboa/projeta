@@ -7,7 +7,7 @@ namespace Projetar.Web.Data;
 public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
     : IdentityDbContext<ApplicationUser>(options)
 {
-    public DbSet<Mandamento> Mandamentos => Set<Mandamento>();
+    public DbSet<Principio> Principios => Set<Principio>();
     public DbSet<Item> Itens => Set<Item>();
     public DbSet<ItemRevisao> ItemRevisoes => Set<ItemRevisao>();
     public DbSet<ItemRevisaoApoio> ItemRevisaoApoios => Set<ItemRevisaoApoio>();
@@ -52,7 +52,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        builder.Entity<Mandamento>(entity =>
+        builder.Entity<Principio>(entity =>
         {
             entity.Property(m => m.Id).ValueGeneratedNever();
             entity.HasIndex(m => m.Ordem);
@@ -62,9 +62,9 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         {
             entity.HasIndex(i => i.Slug).IsUnique();
             entity.HasIndex(i => i.Status);
-            entity.HasOne(i => i.Mandamento)
+            entity.HasOne(i => i.Principio)
                 .WithMany(m => m.Itens)
-                .HasForeignKey(i => i.MandamentoId)
+                .HasForeignKey(i => i.PrincipioId)
                 .OnDelete(DeleteBehavior.Cascade);
             entity.HasOne(i => i.CriadoPorUsuario)
                 .WithMany()
@@ -240,7 +240,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 
         builder.Entity<EscopoModeracao>(entity =>
         {
-            entity.HasIndex(e => new { e.UsuarioId, e.TipoEscopo, e.MandamentoId, e.ItemId }).IsUnique();
+            entity.HasIndex(e => new { e.UsuarioId, e.TipoEscopo, e.PrincipioId, e.ItemId }).IsUnique();
             entity.HasOne(e => e.Usuario)
                 .WithMany()
                 .HasForeignKey(e => e.UsuarioId)
@@ -249,9 +249,9 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 .WithMany()
                 .HasForeignKey(e => e.AdicionadoPorUsuarioId)
                 .OnDelete(DeleteBehavior.Restrict);
-            entity.HasOne(e => e.Mandamento)
+            entity.HasOne(e => e.Principio)
                 .WithMany()
-                .HasForeignKey(e => e.MandamentoId)
+                .HasForeignKey(e => e.PrincipioId)
                 .OnDelete(DeleteBehavior.Cascade);
             entity.HasOne(e => e.Item)
                 .WithMany()

@@ -35,7 +35,7 @@ public class PasswordResetService(
             <p style="font-size:28px;font-weight:bold;letter-spacing:4px;">{codigo}</p>
             <p>Ele expira em {CodigoVerificacao.Validade.TotalMinutes:0} minutos. Se você não pediu essa redefinição, ignore este e-mail — sua senha continua a mesma.</p>
             """;
-        await emailSender.SendEmailAsync(usuario.Email!, "Redefinição de senha — 10 Mandamentos", corpo);
+        await emailSender.SendEmailAsync(usuario.Email!, "Redefinição de senha — Projeta", corpo);
     }
 
     public async Task<(RedefinicaoSenhaResultado Resultado, string? ErroSenha)> RedefinirAsync(

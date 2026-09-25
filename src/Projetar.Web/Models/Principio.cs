@@ -1,6 +1,6 @@
 namespace Projetar.Web.Models;
 
-public class Mandamento
+public class Principio
 {
     public int Id { get; set; }
 

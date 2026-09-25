@@ -49,7 +49,7 @@ public class EditarModel(
             return RedirectToPage("/Conta/CompletarPerfil");
         }
 
-        var item = await db.Itens.Include(i => i.Mandamento).FirstOrDefaultAsync(i => i.Slug == slug);
+        var item = await db.Itens.Include(i => i.Principio).FirstOrDefaultAsync(i => i.Slug == slug);
         if (item is null)
         {
             return NotFound();
@@ -79,7 +79,7 @@ public class EditarModel(
             return RedirectToPage("/Conta/CompletarPerfil");
         }
 
-        var item = await db.Itens.Include(i => i.Mandamento).FirstOrDefaultAsync(i => i.Slug == slug);
+        var item = await db.Itens.Include(i => i.Principio).FirstOrDefaultAsync(i => i.Slug == slug);
         if (item is null)
         {
             return NotFound();

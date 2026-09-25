@@ -4,8 +4,8 @@ public class Item
 {
     public Guid Id { get; set; }
 
-    public int MandamentoId { get; set; }
-    public Mandamento? Mandamento { get; set; }
+    public int PrincipioId { get; set; }
+    public Principio? Principio { get; set; }
 
     public string Slug { get; set; } = string.Empty;
     public string Titulo { get; set; } = string.Empty;
