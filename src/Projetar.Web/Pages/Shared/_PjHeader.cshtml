@@ -21,9 +21,11 @@
 
     List<Notificacao> notifRecentes = [];
     var totalNaoLidas = 0;
+    ApplicationUser? usuarioAtual = null;
     if (SignInManager.IsSignedIn(User))
     {
-        var usuarioLogadoId = UserManager.GetUserId(User);
+        usuarioAtual = await UserManager.GetUserAsync(User);
+        var usuarioLogadoId = usuarioAtual?.Id;
         totalNaoLidas = await Db.Notificacoes.CountAsync(n => n.UsuarioDestinoId == usuarioLogadoId && !n.Lida);
         notifRecentes = await Db.Notificacoes
             .Where(n => n.UsuarioDestinoId == usuarioLogadoId && !n.Lida)
@@ -76,8 +78,6 @@
               <a href="/#principios" class="pj-pill pj-pill--gold">Propor ideia</a>
             @if (SignInManager.IsSignedIn(User))
             {
-                var usuarioAtual = await UserManager.GetUserAsync(User);
-
                 <div class="pj-notif" data-notif>
                     <button type="button" class="pj-notif__sino" data-notif-toggle aria-haspopup="true" aria-expanded="false" title="Notificações">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -147,5 +147,55 @@
         </div>
     </div>
 </nav>
+
+@* ---------- Barra mobile (< 760px): ☰ + página atual + Propor ideia ---------- *@
+<div class="pj-mnav" data-mnav>
+    <div class="pj-mnav__bar">
+        <button type="button" class="pj-mnav__burger" data-mnav-toggle aria-label="Abrir menu" aria-expanded="false">
+            <svg class="icon-abrir" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
+            <svg class="icon-fechar" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+        </button>
+        <span class="pj-mnav__current">@navAtivo</span>
+        <a href="/#principios" class="pj-pill pj-pill--gold">Propor ideia</a>
+    </div>
+    <nav class="pj-mnav__panel" data-mnav-panel aria-label="Menu principal">
+        @foreach (var item in navItems)
+        {
+            <a href="@item.Href" class="@(item.Label == navAtivo ? "active" : null)">@item.Label</a>
+        }
+        @if (User.IsInRole("Admin") || User.IsInRole("Revisor"))
+        {
+            <a href="/Moderacao/Index" class="@(navAtivo == "Moderação" ? "active" : null)">Moderação</a>
+        }
+        @if (User.IsInRole("Admin"))
+        {
+            <a href="/Principios/Gerenciar">Seções</a>
+            <a href="/Admin/Permissoes">Permissões</a>
+        }
+        @if (SignInManager.IsSignedIn(User))
+        {
+            <a href="/Notificacoes">
+                Notificações
+                @if (totalNaoLidas > 0)
+                {
+                    <span class="badge">@(totalNaoLidas > 99 ? "99+" : totalNaoLidas.ToString())</span>
+                }
+            </a>
+            @if (usuarioAtual is not null && !usuarioAtual.PerfilCompleto)
+            {
+                <a href="/Conta/CompletarPerfil">Completar perfil</a>
+            }
+            <a href="/Conta/EditarPerfil">Editar perfil</a>
+            <a href="/Historico/Index">Meu Histórico</a>
+            <form method="post" asp-area="" asp-page="/Conta/Sair">
+                <button type="submit" class="pj-link-like">Sair</button>
+            </form>
+        }
+        else
+        {
+            <a href="/Conta/Entrar">Entrar</a>
+        }
+    </nav>
+</div>
 
 <div class="pj-rule"><span></span><span></span><span></span></div>
