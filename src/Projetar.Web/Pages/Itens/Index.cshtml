@@ -9,7 +9,7 @@
     var principio = Model.ItemAtual.Principio!;
     var primeiroAutor = Model.Participantes.FirstOrDefault();
     var urlAtual = $"{ViewContext.HttpContext.Request.Scheme}://{ViewContext.HttpContext.Request.Host}{ViewContext.HttpContext.Request.Path}";
-    var citacaoTexto = $"{principio.Secular} Projeta — Decálogo Cívico Brasileiro, princípio {principio.Id}. Disponível em: {urlAtual}. Acesso em {DateTime.Now.ToString("d MMM'.' yyyy", ptBr)}.";
+    var citacaoTexto = $"{principio.Secular} Projeta — Agenda Cívico Brasileiro, princípio {principio.Id}. Disponível em: {urlAtual}. Acesso em {DateTime.Now.ToString("d MMM'.' yyyy", ptBr)}.";
 
     ViewData["Title"] = $"{Model.ItemAtual.Titulo} — Princípio {principio.Id}";
     ViewData["NavAtivo"] = "Propostas";
@@ -139,7 +139,7 @@ else if (Model.ItemAtual.Status == ItemStatus.Arquivado)
             <div class="pj-prose">
                 @Html.Raw(Model.CorpoHtml)
 
-                <div class="pj-attribution">— Projeta, Decálogo Cívico Brasileiro</div>
+                <div class="pj-attribution">— Projeta, Agenda Cívico Brasileiro</div>
 
                 @if (Model.HistoricoAprovado.Count > 0)
                 {
@@ -183,7 +183,7 @@ else if (Model.ItemAtual.Status == ItemStatus.Arquivado)
             <div class="pj-meta-list">
                 <div><b>Redação:</b> @(primeiroAutor?.NomeCompleto ?? "Redação")</div>
                 <div><b>Código do princípio:</b> @principio.Id de 10</div>
-                <div><b>Seção:</b> Decálogo Cívico Brasileiro</div>
+                <div><b>Seção:</b> Agenda Cívico Brasileiro</div>
             </div>
         </div>
 
@@ -254,7 +254,7 @@ else if (Model.ItemAtual.Status == ItemStatus.Arquivado)
         <div class="pj-card pj-card--pad">
             <div class="pj-card__title">Como citar este conteúdo</div>
             <p class="pj-note">
-                @principio.Secular <b>Projeta — Decálogo Cívico Brasileiro</b>, princípio @principio.Id.
+                @principio.Secular <b>Projeta — Agenda Cívico Brasileiro</b>, princípio @principio.Id.
                 Disponível em: <i>@urlAtual</i>.
                 Acesso em @DateTime.Now.ToString("d MMM'.' yyyy", ptBr).
             </p>

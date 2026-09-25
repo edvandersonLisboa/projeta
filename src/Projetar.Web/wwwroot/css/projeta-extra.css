@@ -309,3 +309,15 @@
 @media (max-width: 640px) {
   .pj-user-menu__dropdown { right: -60px; width: calc(100vw - 24px); }
 }
+
+/* Modal "Em qual princípio sua ideia entra?" (pj-modal-propor.js) — lista escolhível de princípios. */
+#modalProporPrincipio { max-width: 480px; }
+.pj-propor-lista { display: flex; flex-direction: column; gap: 8px; max-height: 60vh; overflow-y: auto; }
+.pj-propor-item {
+  display: flex; align-items: center; gap: 14px; padding: 14px 16px;
+  border: 1px solid var(--pj-border); border-radius: var(--pj-radius-sm);
+  text-decoration: none; color: var(--pj-navy); transition: border-color .12s ease, background .12s ease;
+}
+.pj-propor-item:hover { border-color: var(--pj-green); background: var(--pj-green-soft); }
+.pj-propor-item .n { font-family: var(--pj-font-display); font-weight: 500; font-size: 18px; color: var(--pj-gold); flex-shrink: 0; }
+.pj-propor-item .txt { font-size: 14px; line-height: 1.4; }

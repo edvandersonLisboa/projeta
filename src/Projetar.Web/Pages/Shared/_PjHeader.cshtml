@@ -36,7 +36,7 @@
     }
 }
 <div class="pj-utility">
-    @hoje &nbsp;&middot;&nbsp; Decálogo Cívico Brasileiro
+    @hoje &nbsp;&middot;&nbsp; Agenda Cívico Brasileiro
     @if (ViewData["TopbarContexto"] is string topbarContexto)
     {
         <text>&nbsp;&middot;&nbsp; @topbarContexto</text>
@@ -75,7 +75,7 @@
                 <a href="/Principios/Gerenciar">Seções</a>
                 <a href="/Admin/Permissoes">Permissões</a>
             }
-              <a href="/#principios" class="pj-pill pj-pill--gold">Propor ideia</a>
+              <a href="/#principios" data-propor-toggle class="pj-pill pj-pill--gold">Propor ideia</a>
             @if (SignInManager.IsSignedIn(User))
             {
                 <div class="pj-notif" data-notif>
@@ -156,7 +156,7 @@
             <svg class="icon-fechar" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
         </button>
         <span class="pj-mnav__current">@navAtivo</span>
-        <a href="/#principios" class="pj-pill pj-pill--gold">Propor ideia</a>
+        <a href="/#principios" data-propor-toggle class="pj-pill pj-pill--gold">Propor ideia</a>
     </div>
     <nav class="pj-mnav__panel" data-mnav-panel aria-label="Menu principal">
         @foreach (var item in navItems)
