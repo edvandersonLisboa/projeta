@@ -1,0 +1,33 @@
+@page
+@model Projetar.Web.Pages.BuscaModel
+@{
+    ViewData["Title"] = "Pesquisar";
+    ViewData["BuscaQuery"] = Model.Q;
+    ViewData["Breadcrumbs"] = new List<(string, string?)> { ("Início", "/"), ("Pesquisar", null) };
+}
+
+<span class="gbr-eyebrow">Busca</span>
+@if (string.IsNullOrWhiteSpace(Model.Q))
+{
+    <h1 class="gbr-h2" style="margin-bottom:var(--gbr-space-8);">Pesquisar princípios, ideias e propostas de lei</h1>
+    <p class="gbr-muted">Use a busca no topo da página para encontrar um princípio, uma ideia ou uma proposta de lei pelo título, texto ou tag.</p>
+}
+else
+{
+    <h1 class="gbr-h2" style="margin-bottom:var(--gbr-space-2);">Resultados para "@Model.Q"</h1>
+    <p class="gbr-lead" style="margin-bottom:var(--gbr-space-8);">@Model.Resultados.Count resultado@(Model.Resultados.Count == 1 ? "" : "s")</p>
+
+    @if (Model.Resultados.Count == 0)
+    {
+        <p class="gbr-muted">Nada encontrado. Tente outro termo.</p>
+    }
+    else
+    {
+        <div class="gbr-itemcard-grid">
+            @foreach (var item in Model.Resultados)
+            {
+                <partial name="_ItemCard" model="item" />
+            }
+        </div>
+    }
+}

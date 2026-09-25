@@ -1,0 +1,122 @@
+@page
+@model Projetar.Web.Pages.Notificacoes.IndexModel
+@using Projetar.Web.Models
+@using Projetar.Web.Services
+@{
+    ViewData["Title"] = "Notificações";
+    ViewData["Breadcrumbs"] = new List<(string, string?)> { ("Início", "/"), ("Notificações", null) };
+}
+
+<span class="gbr-eyebrow">Sua conta</span>
+<h1 class="gbr-h2" style="margin-bottom:var(--gbr-space-2);">Notificações</h1>
+<p class="gbr-lead" style="margin-bottom:0;">
+    Avisos de moderação, edições, referências, documentos, tags e banners relacionados aos princípios do Projeta.
+</p>
+
+<div class="gbr-notif-filtros">
+    <form method="get" class="gbr-notif-filtros__form">
+        <select name="filtro" class="gbr-select" onchange="this.form.submit()">
+                @if (Model.Filtro == "ativas")
+                {
+                    <option value="ativas" selected>Ativas (não lidas) — @Model.TotalNaoLidas</option>
+                }
+                else
+                {
+                    <option value="ativas">Ativas (não lidas) — @Model.TotalNaoLidas</option>
+                }
+                @if (Model.Filtro == "lidas")
+                {
+                    <option value="lidas" selected>Desativadas (já vistas)</option>
+                }
+                else
+                {
+                    <option value="lidas">Desativadas (já vistas)</option>
+                }
+                @if (Model.Filtro == "todas")
+                {
+                    <option value="todas" selected>Todas — @Model.TotalGeral</option>
+                }
+                else
+                {
+                    <option value="todas">Todas — @Model.TotalGeral</option>
+                }
+        </select>
+    </form>
+
+    @if (Model.TotalNaoLidas > 0)
+    {
+        <form method="post" asp-page-handler="MarcarTodasLidas">
+            <input type="hidden" name="filtro" value="@Model.Filtro" />
+            <button type="submit" class="gbr-btn gbr-btn--outline gbr-btn--sm">Marcar todas como vistas</button>
+        </form>
+    }
+</div>
+
+@if (Model.Lista.Count == 0)
+{
+    <p class="gbr-muted">
+        @(Model.Filtro switch
+        {
+            "lidas" => "Nenhuma notificação vista ainda.",
+            "todas" => "Nenhuma notificação por aqui ainda.",
+            _ => "Nenhuma notificação ativa — tudo em dia!",
+        })
+    </p>
+}
+else
+{
+    <div class="gbr-notif-lista">
+        @foreach (var n in Model.Lista)
+        {
+            <details class="gbr-card gbr-notif-card @(n.Lida ? "" : "gbr-notif-card--nao-lida")">
+                <summary>
+                    <span class="gbr-notif-card__ponto gbr-notif-card__ponto--@n.Tipo.Situacao()"></span>
+                    <span class="gbr-notif-card__corpo">
+                        <span class="gbr-notif-card__topo">
+                            <span class="gbr-notif-card__titulo">@n.Titulo</span>
+                            @if (!n.Lida)
+                            {
+                                <span class="gbr-badge gbr-badge--warning">Não lida</span>
+                            }
+                            <span class="gbr-notif-card__tempo">@TempoRelativo.Formatar(n.DataCriacao)</span>
+                        </span>
+                        <span class="gbr-notif-card__msg">@n.Mensagem</span>
+                    </span>
+                </summary>
+                <div class="gbr-notif-card__detalhes">
+                    <div class="gbr-notif-card__meta">
+                        <span><b>Usuário:</b> @(n.UsuarioOrigem?.Nome ?? "Sistema")</span>
+                        <span><b>Data:</b> @n.DataCriacao.ToLocalTime().ToString("dd/MM/yyyy 'às' HH:mm")</span>
+                        @if (n.Item is not null)
+                        {
+                            <span><b>Princípio:</b> @n.Item.Titulo</span>
+                        }
+                        <span><b>Tipo:</b> @n.Tipo.Rotulo()</span>
+                    </div>
+                    <div class="gbr-notif-card__acoes">
+                        @if (!string.IsNullOrWhiteSpace(n.LinkUrl))
+                        {
+                            <a href="@n.LinkUrl" class="gbr-btn gbr-btn--primary gbr-btn--sm">Ver assunto</a>
+                        }
+                        @if (n.Lida)
+                        {
+                            <form method="post" asp-page-handler="MarcarNaoLida">
+                                <input type="hidden" name="id" value="@n.Id" />
+                                <input type="hidden" name="filtro" value="@Model.Filtro" />
+                                <button type="submit" class="gbr-btn gbr-btn--ghost gbr-btn--sm">Reativar (marcar como não lida)</button>
+                            </form>
+                        }
+                        else
+                        {
+                            <form method="post" asp-page-handler="MarcarLida">
+                                <input type="hidden" name="id" value="@n.Id" />
+                                <input type="hidden" name="filtro" value="@Model.Filtro" />
+                                <button type="submit" class="gbr-btn gbr-btn--outline gbr-btn--sm">Marcar como vista</button>
+                            </form>
+                        }
+                    </div>
+                </div>
+            </details>
+        }
+    </div>
+}

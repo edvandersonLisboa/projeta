@@ -1,11 +1,49 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Projetar.Web.Models;
 
 public enum ReferenciaTipo
 {
+    [Display(Name = "Artigo")]
     Artigo = 0,
+
+    [Display(Name = "Vídeo")]
     Video = 1,
+
+    [Display(Name = "Lei ou norma")]
     LeiOuNorma = 2,
+
+    [Display(Name = "Outro")]
     Outro = 3,
+
+    [Display(Name = "Livro")]
+    Livro = 4,
+
+    [Display(Name = "Projeto de lei")]
+    ProjetoDeLei = 5,
+}
+
+/// <summary>Rótulo em português e classe de cor da tag, usados nos cards de referência.</summary>
+public static class ReferenciaTipoExtensions
+{
+    public static string Rotulo(this ReferenciaTipo tipo)
+    {
+        var campo = typeof(ReferenciaTipo).GetField(tipo.ToString());
+        var display = campo?.GetCustomAttributes(typeof(DisplayAttribute), false)
+            .OfType<DisplayAttribute>()
+            .FirstOrDefault();
+        return display?.Name ?? tipo.ToString();
+    }
+
+    public static string ClasseTag(this ReferenciaTipo tipo) => tipo switch
+    {
+        ReferenciaTipo.Livro => "gbr-tag--livro",
+        ReferenciaTipo.Artigo => "gbr-tag--artigo",
+        ReferenciaTipo.ProjetoDeLei => "gbr-tag--lei",
+        ReferenciaTipo.LeiOuNorma => "gbr-tag--lei",
+        ReferenciaTipo.Video => "gbr-tag--video",
+        _ => "gbr-tag--outro",
+    };
 }
 
 /// <summary>Link externo (artigo, vídeo, lei) usado para fortalecer o argumento de um Item.</summary>

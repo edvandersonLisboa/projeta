@@ -6,36 +6,38 @@
     var podeParticipar = ViewData["PodeParticipar"] is true;
     var podeRemover = !Model.Removido && (Model.UsuarioId == usuarioAtualId || ehModerador);
 }
-<div class="gbr-comentario">
-    <div class="gbr-comentario__head">
-        <span class="gbr-comentario__autor">@(Model.Removido ? "—" : (Model.Usuario?.NomeCompleto ?? "Usuário removido"))</span>
-        <span class="gbr-comentario__data">@Model.DataCriacao.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
+<div class="pj-comment @(Model.Removido ? "pj-comment--removido" : null)">
+    <div class="pj-comment__head">
+        <span class="pj-comment__author">@(Model.Removido ? "—" : (Model.Usuario?.NomeCompleto ?? "Usuário removido"))</span>
+        <span class="pj-comment__date">@Model.DataCriacao.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
     </div>
-    <p class="gbr-comentario__texto">@(Model.Removido ? "[comentário removido]" : Model.Texto)</p>
+    <p class="pj-comment__text">@(Model.Removido ? "[comentário removido]" : Model.Texto)</p>
 
-    <div class="gbr-row gbr-comentario__acoes">
+    <div class="pj-comment__actions">
         @if (!Model.Removido && podeParticipar)
         {
-            <details class="gbr-comentario__responder">
-                <summary class="gbr-help">Responder</summary>
-                <form method="post" asp-page="/Itens/Index" asp-page-handler="Comentario" asp-route-slug="@slug" class="gbr-stack">
-                    <textarea name="NovoComentario.Texto" class="gbr-textarea" rows="2" required></textarea>
+            <details>
+                <summary style="cursor:pointer; list-style:none; color:var(--pj-green-dark); font-size:12.5px;">Responder</summary>
+                <form method="post" asp-page="/Itens/Index" asp-page-handler="Comentario" asp-route-slug="@slug" class="pj-comment__reply-form">
+                    <textarea rows="2" name="NovoComentario.Texto" required></textarea>
                     <input type="hidden" name="NovoComentario.ComentarioPaiId" value="@Model.Id" />
-                    <button type="submit" class="gbr-btn gbr-btn--sm gbr-btn--outline">Enviar resposta</button>
+                    <div style="margin-top:8px;">
+                        <button type="submit" class="pj-btn pj-btn--outline-navy pj-btn--sm">Enviar resposta</button>
+                    </div>
                 </form>
             </details>
         }
         @if (podeRemover)
         {
             <form method="post" asp-page="/Itens/Index" asp-page-handler="RemoverComentario" asp-route-slug="@slug" asp-route-id="@Model.Id">
-                <button type="submit" class="gbr-btn gbr-btn--ghost gbr-btn--sm">Remover</button>
+                <button type="submit" class="muted">Remover</button>
             </form>
         }
     </div>
 
     @if (Model.Respostas.Count > 0)
     {
-        <div class="gbr-comentario__respostas">
+        <div class="pj-comment__replies">
             @foreach (var resposta in Model.Respostas.OrderBy(r => r.DataCriacao))
             {
                 <partial name="_Comentario" model="resposta" />

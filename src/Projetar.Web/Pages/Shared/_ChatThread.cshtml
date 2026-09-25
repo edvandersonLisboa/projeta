@@ -1,0 +1,46 @@
+@model Projetar.Web.Pages.Shared.ChatThreadViewModel
+@using Projetar.Web.Services
+
+<div class="pj-chat__messages" data-chat-messages>
+    @if (Model.Mensagens.Count == 0)
+    {
+        <div class="pj-chat__empty">
+            <span>@Model.TituloVazio</span>
+            @if (!string.IsNullOrEmpty(Model.DicaVazia))
+            {
+                <small>@Model.DicaVazia</small>
+            }
+        </div>
+    }
+    @foreach (var m in Model.Mensagens)
+    {
+        <div class="pj-chat__row @(m.AutorUsuarioId == Model.MeuUsuarioId ? "is-mine" : "")">
+            <div class="pj-chat__bubble">
+                <div class="author">@(m.AutorUsuario?.Nome ?? "Usuário")</div>
+                <div class="text">@m.Texto</div>
+                <div class="when">@m.DataCriacao.ToLocalTime().ToString("dd/MM · HH:mm")</div>
+            </div>
+        </div>
+    }
+</div>
+
+@if (!Model.SomenteLeitura)
+{
+    <form method="post" asp-page-handler="@Model.FormHandler" class="pj-chat__compose">
+        <input type="hidden" name="tipo" value="@Model.Tipo" />
+        <input type="hidden" name="alvoId" value="@Model.AlvoId" />
+        @foreach (var campo in Model.CamposExtras)
+        {
+            <input type="hidden" name="@campo.Key" value="@campo.Value" />
+        }
+        <div class="row">
+            <textarea name="texto" rows="2" data-chat-input placeholder="@Model.Placeholder" required></textarea>
+            <button type="submit" class="pj-btn pj-btn--green">Enviar</button>
+        </div>
+        <div class="hint">Enter envia · Shift + Enter quebra linha</div>
+    </form>
+}
+else if (!string.IsNullOrEmpty(Model.NotaSomenteLeitura))
+{
+    <div class="pj-chat__closed">@Model.NotaSomenteLeitura</div>
+}

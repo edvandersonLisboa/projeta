@@ -1,0 +1,37 @@
+@using Projetar.Web.Models
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Projeta</title>
+    <link rel="icon" type="image/svg+xml" href="~/img/simbolo.svg" asp-append-version="true" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="~/css/projeta.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/projeta-extra.css" asp-append-version="true" />
+</head>
+@{
+    var _pjMsgSucesso = TempData["MensagemSucesso"] as string;
+    var _pjMsgErro = TempData["MensagemErro"] as string;
+}
+<body>
+<div class="pj-app">
+    <partial name="_PjHeader" />
+
+    @RenderBody()
+
+    <partial name="_PjFooter" />
+</div>
+<script src="~/js/pj-snackbar.js" asp-append-version="true"></script>
+<script src="~/js/notificacoes-sino.js" asp-append-version="true"></script>
+@if (_pjMsgSucesso is not null)
+{
+    <script>window.pjSnackbar(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(_pjMsgSucesso)), 'success');</script>
+}
+@if (_pjMsgErro is not null)
+{
+    <script>window.pjSnackbar(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(_pjMsgErro)), 'error');</script>
+}
+@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

@@ -1,98 +1,340 @@
 @page "/Mandamentos/Gerenciar"
 @model Projetar.Web.Pages.Secoes.GerenciarModel
+@using Projetar.Web.Models
 @{
+    Layout = "_LayoutPj";
     ViewData["Title"] = "Gerenciar seções";
+    var cur = Model.Atual;
+    string Qs(string principioId) => $"?principioId={principioId}";
 }
 
-<h1 class="gbr-h2">Gerenciar seções</h1>
-<p class="gbr-lead" style="margin-bottom:var(--gbr-space-6);">
-    Habilite ou oculte cada mandamento e cada item da página inicial. O que fica oculto só é acessível para administradores.
-</p>
+<div class="pj-shell pj-sec-head">
+    <div>
+        <span class="pj-eyebrow">Administração</span>
+        <h1>Gerenciar seções</h1>
+        @if (Model.EhAdmin)
+        {
+            <p>Habilite ou oculte cada princípio e cada item da página inicial. O que fica oculto só é acessível para administradores.</p>
+        }
+        else
+        {
+            <p>Você vê e gerencia apenas os princípios e itens sob sua responsabilidade como revisor.</p>
+        }
+    </div>
+    <div class="pj-sec-stats">
+        <div><b class="green">@Model.TotalPrincipiosVisiveis/@Model.Todos.Count</b><span>Princípios visíveis</span></div>
+        <div><b>@Model.TotalItensPublicados</b><span>Itens publicados</span></div>
+        <div><b class="gold">@Model.TotalItensOcultos</b><span>Itens ocultos</span></div>
+    </div>
+</div>
 
-@if (TempData["MensagemSucesso"] is string sucesso)
-{
-    <div class="gbr-alert gbr-alert--success" role="status"><div class="gbr-alert__body">@sucesso</div></div>
-}
-@if (TempData["MensagemErro"] is string erro)
-{
-    <div class="gbr-alert gbr-alert--danger" role="alert"><div class="gbr-alert__body">@erro</div></div>
-}
+<div class="pj-shell pj-sec-body">
 
-<div class="gbr-stack">
-    @foreach (var m in Model.MandamentosList)
-    {
-        <div class="gbr-card">
-            <div class="gbr-row" style="justify-content:space-between;flex-wrap:wrap;">
-                <div>
-                    <span class="gbr-eyebrow">Mandamento @m.Id</span>
-                    <h2 class="gbr-h4" style="margin-top:var(--gbr-space-1);">@m.Secular</h2>
-                </div>
-
-                <div class="gbr-row">
-                    @if (m.Visivel)
-                    {
-                        <span class="gbr-badge gbr-badge--success">Visível ao público</span>
-                    }
-                    else
-                    {
-                        <span class="gbr-badge gbr-badge--warning">Oculto do público</span>
-                    }
-
-                    <form method="post" asp-page-handler="AlternarVisibilidade" asp-route-id="@m.Id">
-                        <button type="submit" class="gbr-btn gbr-btn--sm @(m.Visivel ? "gbr-btn--outline" : "gbr-btn--secondary")">
-                            @(m.Visivel ? "Ocultar do público" : "Publicar para o público")
-                        </button>
-                    </form>
-                </div>
-            </div>
-
-            <details style="margin-top:var(--gbr-space-4);">
-                <summary class="gbr-btn gbr-btn--ghost gbr-btn--sm">Editar textos</summary>
-                <form method="post" asp-page-handler="Editar" asp-route-id="@m.Id" class="gbr-stack" style="margin-top:var(--gbr-space-3);">
-                    <div class="gbr-field">
-                        <label class="gbr-label">Frase bíblica</label>
-                        <input class="gbr-input" name="biblical" value="@m.Biblical" required />
-                    </div>
-                    <div class="gbr-field">
-                        <label class="gbr-label">Título secular</label>
-                        <input class="gbr-input" name="secular" value="@m.Secular" required />
-                    </div>
-                    <div class="gbr-field">
-                        <label class="gbr-label">Introdução</label>
-                        <textarea class="gbr-textarea" name="intro" rows="3" required>@m.Intro</textarea>
-                    </div>
-                    <div class="gbr-row" style="justify-content:flex-end;">
-                        <button type="submit" class="gbr-btn gbr-btn--primary gbr-btn--sm">Salvar textos</button>
-                    </div>
-                </form>
-            </details>
-
-            @if (m.Itens.Count > 0)
+    @* ---------- Lista de princípios ---------- *@
+    <div class="pj-card pj-sec-list">
+        <div class="pj-sec-list__head">
+            <b>Princípios</b>
+            @if (Model.EhAdmin)
             {
-                <hr class="gbr-divider" />
-                <p class="gbr-label" style="margin-bottom:var(--gbr-space-3);">Itens deste mandamento</p>
-                <ul class="gbr-material-list">
-                    @foreach (var item in m.Itens)
-                    {
-                        <li class="gbr-material-list__item">
-                            <span style="flex:1;min-width:0;">@item.Titulo</span>
-                            @if (item.Visivel)
+                <button type="button" class="pj-btn-mini" onclick="document.getElementById('modalNovoPrincipio').showModal()">+ Novo princípio</button>
+            }
+        </div>
+        @if (Model.EhAdmin)
+        {
+            <div class="pj-sec-list__note">Use as setas para ordenar. A numeração pública se ajusta sozinha: princípio oculto não recebe número.</div>
+        }
+
+        @for (var i = 0; i < Model.Todos.Count; i++)
+        {
+            var p = Model.Todos[i];
+            <div class="pj-sec-prow @(cur?.Id == p.Id ? "on" : "")">
+                <a href="@Qs(p.Id.ToString())" style="display:contents;">
+                    <span class="handle">&#8942;&#8942;</span>
+                    <span class="num @(p.Visivel ? "" : "off")">@(Model.NumeroPublico(p) is int n ? n.ToString("00") : "–")</span>
+                    <span class="info">
+                        <span class="title @(p.Visivel ? "" : "off")">@p.Secular</span>
+                        <span class="meta">@Projetar.Web.Pages.Secoes.GerenciarModel.ItensMeta(p)</span>
+                    </span>
+                </a>
+                @if (!p.Visivel)
+                {
+                    <span class="pj-sec-badge">Oculto</span>
+                }
+                @if (Model.EhAdmin)
+                {
+                    <span class="arrows">
+                        <form method="post" asp-page-handler="MoverPrincipio" style="display:contents;">
+                            <input type="hidden" name="id" value="@p.Id" />
+                            <input type="hidden" name="direcao" value="-1" />
+                            @if (i == 0)
                             {
-                                <span class="gbr-badge gbr-badge--success">Visível</span>
+                                <span class="is-disabled">&#9650;</span>
                             }
                             else
                             {
-                                <span class="gbr-badge gbr-badge--warning">Oculto</span>
+                                <button type="submit" title="Subir">&#9650;</button>
                             }
-                            <form method="post" asp-page-handler="AlternarVisibilidadeItem" asp-route-id="@item.Id">
-                                <button type="submit" class="gbr-btn gbr-btn--sm @(item.Visivel ? "gbr-btn--outline" : "gbr-btn--secondary")">
-                                    @(item.Visivel ? "Ocultar" : "Publicar")
-                                </button>
-                            </form>
-                        </li>
-                    }
-                </ul>
+                        </form>
+                        <form method="post" asp-page-handler="MoverPrincipio" style="display:contents;">
+                            <input type="hidden" name="id" value="@p.Id" />
+                            <input type="hidden" name="direcao" value="1" />
+                            @if (i == Model.Todos.Count - 1)
+                            {
+                                <span class="is-disabled">&#9660;</span>
+                            }
+                            else
+                            {
+                                <button type="submit" title="Descer">&#9660;</button>
+                            }
+                        </form>
+                    </span>
+                }
+            </div>
+        }
+    </div>
+
+    @* ---------- Princípio aberto ---------- *@
+    @if (cur is not null)
+    {
+        var idx = Model.Todos.IndexOf(cur);
+        var primeiroItem = cur.Itens.FirstOrDefault();
+        <div class="pj-card pj-sec-detail">
+            <div class="pj-sec-detail__head">
+                <div class="grow">
+                    <div class="pj-sec-num">
+                        <span>@(Model.NumeroPublico(cur) is int pn ? $"Princípio {pn}" : "Sem número público")</span>
+                        <small>posição @(idx + 1) de @Model.Todos.Count@(cur.Visivel ? "" : " · recebe número ao ficar visível")</small>
+                    </div>
+                    <div class="pj-sec-title">
+                        <h2>@cur.Secular</h2>
+                    </div>
+                    <div class="pj-sec-links">
+                        @if (Model.EhAdmin)
+                        {
+                            <a href="#editarTextos" onclick="document.getElementById('editarTextos').open = true;">Editar textos do princípio →</a>
+                        }
+                        @if (primeiroItem is not null)
+                        {
+                            <a href="/Itens/@primeiroItem.Slug" target="_blank">Ver na página →</a>
+                        }
+                    </div>
+                </div>
+                @if (Model.EhAdmin)
+                {
+                    <form method="post" asp-page-handler="AlternarVisibilidade">
+                        <input type="hidden" name="id" value="@cur.Id" />
+                        <button type="submit" class="pj-sec-vis @(cur.Visivel ? "on" : "")">
+                            <span class="pj-switch pj-switch--lg @(cur.Visivel ? "on" : "")"><i></i></span>
+                            <span class="txt">
+                                <b>@(cur.Visivel ? "Visível ao público" : "Oculto do público")</b>
+                                <small>@(cur.Visivel ? "Aparece na página inicial" : "Só administradores veem")</small>
+                            </span>
+                        </button>
+                    </form>
+                }
+            </div>
+
+            @if (!cur.Visivel)
+            {
+                <div class="pj-sec-warn">Este princípio está oculto. Mesmo os itens marcados como visíveis não aparecem para o público até ele ser exibido.</div>
             }
+
+            @if (Model.EhAdmin)
+            {
+                <details id="editarTextos" style="margin:0 28px 18px;">
+                    <summary class="pj-link-btn">Editar resumo, título e introdução</summary>
+                    <form method="post" asp-page-handler="Editar" class="gbr-stack" style="margin-top:10px;">
+                        <input type="hidden" name="id" value="@cur.Id" />
+                        <div class="gbr-field">
+                            <label class="gbr-label">Resumo curto (subtítulo)</label>
+                            <input class="gbr-input" name="subtitulo" value="@cur.Subtitulo" maxlength="120" required />
+                        </div>
+                        <div class="gbr-field">
+                            <label class="gbr-label">Título secular</label>
+                            <input class="gbr-input" name="secular" value="@cur.Secular" required />
+                        </div>
+                        <div class="gbr-field">
+                            <label class="gbr-label">Introdução <small class="gbr-muted">(máx. @Projetar.Web.Pages.Secoes.GerenciarModel.IntroMaxLength caracteres)</small></label>
+                            <textarea class="gbr-textarea" name="intro" rows="3" maxlength="@Projetar.Web.Pages.Secoes.GerenciarModel.IntroMaxLength" required>@cur.Intro</textarea>
+                        </div>
+                        <div class="gbr-row" style="justify-content:flex-end;">
+                            <button type="submit" class="pj-btn pj-btn--navy pj-btn--sm">Salvar textos</button>
+                        </div>
+                    </form>
+                </details>
+            }
+
+            <div class="pj-sec-toolbar">
+                <b>Itens <span>@cur.Itens.Count</span></b>
+                <form method="get" class="pj-seg pj-seg--white">
+                    <input type="hidden" name="principioId" value="@cur.Id" />
+                    <button type="submit" name="filtro" value="all" class="@(Model.Filtro == "all" ? "on-navy" : "")">Todos <span>@cur.Itens.Count</span></button>
+                    <button type="submit" name="filtro" value="on" class="@(Model.Filtro == "on" ? "on-navy" : "")">Visíveis <span>@cur.Itens.Count(x => x.Visivel)</span></button>
+                    <button type="submit" name="filtro" value="off" class="@(Model.Filtro == "off" ? "on-navy" : "")">Ocultos <span>@cur.Itens.Count(x => !x.Visivel)</span></button>
+                </form>
+                <form method="get" class="pj-sec-search">
+                    <input type="hidden" name="principioId" value="@cur.Id" />
+                    <input type="hidden" name="filtro" value="@Model.Filtro" />
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#A8AFBD" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+                    <input type="text" name="busca" value="@Model.Busca" placeholder="Buscar item" />
+                </form>
+                @if (Model.PodeCriarItemNoAtual)
+                {
+                    <button type="button" class="pj-btn pj-btn--navy pj-btn--sm" onclick="document.getElementById('novoItemRow').hidden = false">+ Novo item</button>
+                }
+            </div>
+
+            <form method="post" id="formItens">
+                <input type="hidden" name="principioId" value="@cur.Id" />
+
+                @if (Model.PodeCriarItemNoAtual)
+                {
+                    <div id="novoItemRow" class="pj-sec-add" hidden>
+                        <input type="text" name="titulo" placeholder="Título do novo item" />
+                        <input type="hidden" name="mandamentoId" value="@cur.Id" />
+                        <button type="submit" asp-page-handler="CriarItemRapido" class="pj-btn pj-btn--green pj-btn--sm">Adicionar</button>
+                        <button type="button" class="pj-link-btn" onclick="document.getElementById('novoItemRow').hidden = true">Cancelar</button>
+                    </div>
+                }
+
+                <div class="pj-sec-bulk" data-bulk-bar hidden>
+                    <span data-bulk-count>0 itens selecionados</span>
+                    <span class="grow"></span>
+                    <button type="submit" asp-page-handler="MostrarSelecionados">Mostrar</button>
+                    <button type="submit" asp-page-handler="OcultarSelecionados">Ocultar</button>
+                    @{ var destinos = Model.Todos.Where(t => t.Id != cur.Id && Model.MandamentosModeraveis.Contains(t.Id)).ToList(); }
+                    @if (destinos.Count > 0)
+                    {
+                        <select name="novoMandamentoId" onchange="if(this.value){this.form.action='?handler=MoverSelecionados&amp;principioId=@cur.Id';this.form.submit();}">
+                            <option value="">Mover para…</option>
+                            @foreach (var t in destinos)
+                            {
+                                <option value="@t.Id">@(Model.NumeroPublico(t)?.ToString("00") ?? "–") — @t.Secular</option>
+                            }
+                        </select>
+                    }
+                    <button type="button" class="clear" data-bulk-clear>Limpar</button>
+                </div>
+
+                <div class="pj-sec-thead">
+                    <input type="checkbox" data-select-all title="Selecionar todos" />
+                    <span class="grow">Título</span>
+                    <span class="w-vis">Visibilidade</span>
+                    <span class="w-act">Ações</span>
+                </div>
+
+                @foreach (var item in Model.ItensDoAtual)
+                {
+                    var itemIdx = cur.Itens.IndexOf(item);
+                    <div class="pj-sec-irow">
+                        <span class="handle @(Model.Filtro != "all" || !string.IsNullOrWhiteSpace(Model.Busca) ? "off" : "")">&#8942;&#8942;</span>
+                        <input type="checkbox" name="ids" value="@item.Id" data-select-item />
+                        <span class="title @(item.Visivel ? "" : "off")">@item.Titulo</span>
+
+                        <button type="submit" asp-page-handler="AlternarVisibilidadeItem" asp-route-id="@item.Id" asp-route-principioId="@cur.Id"
+                                class="pj-sec-itemvis w-vis" title="@(item.Visivel ? "Ocultar do público" : "Mostrar ao público")">
+                            <span class="pj-switch @(item.Visivel ? "on" : "")"><i></i></span>
+                            <span class="@(item.Visivel ? "on" : "")">@(item.Visivel ? "Visível" : "Oculto")</span>
+                        </button>
+
+                        <div class="w-act pj-sec-actions">
+                            <span class="arrows" style="flex-direction:row;">
+                                @if (itemIdx == 0)
+                                {
+                                    <button type="button" disabled title="Subir">&#9650;</button>
+                                }
+                                else
+                                {
+                                    <button type="submit" asp-page-handler="MoverItemOrdem" asp-route-id="@item.Id" asp-route-direcao="-1" asp-route-principioId="@cur.Id" title="Subir">&#9650;</button>
+                                }
+                                @if (itemIdx == cur.Itens.Count - 1)
+                                {
+                                    <button type="button" disabled title="Descer">&#9660;</button>
+                                }
+                                else
+                                {
+                                    <button type="submit" asp-page-handler="MoverItemOrdem" asp-route-id="@item.Id" asp-route-direcao="1" asp-route-principioId="@cur.Id" title="Descer">&#9660;</button>
+                                }
+                            </span>
+                            <a class="pj-icon-sq" href="/Itens/@item.Slug/Editar" title="Editar item">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
+                            </a>
+                            @{ var destinosItem = Model.Todos.Where(t => t.Id != cur.Id && Model.MandamentosModeraveis.Contains(t.Id)).ToList(); }
+                            @if (destinosItem.Count > 0)
+                            {
+                                <details class="pj-sec-menu-wrap">
+                                    <summary class="pj-icon-sq" title="Mover para outro princípio">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></svg>
+                                    </summary>
+                                    <div class="pj-sec-menu">
+                                        <div class="label">Mover para</div>
+                                        @foreach (var t in destinosItem)
+                                        {
+                                            <button type="submit" asp-page-handler="MoverItem" asp-route-id="@item.Id" asp-route-principioId="@cur.Id" asp-route-novoMandamentoId="@t.Id">
+                                                <span class="n">@(Model.NumeroPublico(t)?.ToString() ?? "–")</span><span>@t.Secular</span>
+                                            </button>
+                                        }
+                                    </div>
+                                </details>
+                            }
+                        </div>
+                    </div>
+                }
+
+                @if (Model.ItensDoAtual.Count == 0)
+                {
+                    <div class="pj-sec-empty">
+                        @(!string.IsNullOrWhiteSpace(Model.Busca)
+                            ? $"Nenhum item encontrado para \"{Model.Busca.Trim()}\"."
+                            : cur.Itens.Count == 0 ? "Este princípio ainda não tem itens. Use \"+ Novo item\" para começar."
+                            : "Nenhum item neste filtro.")
+                    </div>
+                }
+            </form>
         </div>
     }
 </div>
+
+@if (Model.EhAdmin)
+{
+<dialog id="modalNovoPrincipio" class="pj-dialog" data-abrir="@(Model.AbrirModalNovoPrincipio ? "1" : "0")">
+    <div class="pj-dialog__head">
+        <span class="pj-dialog__title">Novo princípio</span>
+        <button type="button" class="pj-dialog__close" onclick="document.getElementById('modalNovoPrincipio').close()" aria-label="Fechar">&times;</button>
+    </div>
+    <form method="post" asp-page-handler="CriarMandamento" class="gbr-stack">
+        <input type="hidden" name="principioId" value="@(cur?.Id)" />
+        <input type="hidden" name="filtro" value="@Model.Filtro" />
+        <input type="hidden" name="busca" value="@Model.Busca" />
+
+        @if (Model.ErroNovoPrincipio is not null)
+        {
+            <div class="pj-alert pj-alert--danger" role="alert"><strong>Não deu certo</strong>@Model.ErroNovoPrincipio</div>
+        }
+
+        <div class="pj-field">
+            <label>Resumo curto (subtítulo)</label>
+            <input type="text" name="subtitulo" maxlength="120" value="@Model.NovoSubtitulo" required autofocus />
+        </div>
+        <div class="pj-field">
+            <label>Título secular</label>
+            <input type="text" name="secular" value="@Model.NovoSecular" required />
+        </div>
+        <div class="pj-field">
+            <label>Introdução <small>(máx. @Projetar.Web.Pages.Secoes.GerenciarModel.IntroMaxLength caracteres)</small></label>
+            <textarea id="novoPrincipioIntro" name="intro" rows="4" maxlength="@Projetar.Web.Pages.Secoes.GerenciarModel.IntroMaxLength" required>@Model.NovoIntro</textarea>
+            <span id="novoPrincipioContador" class="pj-field__count">0/@Projetar.Web.Pages.Secoes.GerenciarModel.IntroMaxLength</span>
+        </div>
+        <p class="pj-dialog__hint">O princípio nasce oculto do público — publique quando estiver pronto.</p>
+        <div class="gbr-row" style="justify-content:flex-end; gap:8px;">
+            <button type="button" class="pj-btn pj-btn--outline-navy pj-btn--sm" onclick="document.getElementById('modalNovoPrincipio').close()">Cancelar</button>
+            <button type="submit" class="pj-btn pj-btn--green pj-btn--sm">Criar princípio</button>
+        </div>
+    </form>
+</dialog>
+}
+
+@section Scripts {
+    <script src="~/js/secoes-bulk.js" asp-append-version="true"></script>
+    <script src="~/js/secoes-novo-principio.js" asp-append-version="true"></script>
+}

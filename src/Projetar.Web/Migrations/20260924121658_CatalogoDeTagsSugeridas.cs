@@ -1,0 +1,42 @@
+﻿using Microsoft.EntityFrameworkCore.Migrations;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
+
+#nullable disable
+
+namespace Projetar.Web.Migrations
+{
+    /// <inheritdoc />
+    public partial class CatalogoDeTagsSugeridas : Migration
+    {
+        /// <inheritdoc />
+        protected override void Up(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.CreateTable(
+                name: "TagsCatalogo",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Nome = table.Column<string>(type: "text", nullable: false),
+                    Ordem = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_TagsCatalogo", x => x.Id);
+                });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TagsCatalogo_Nome",
+                table: "TagsCatalogo",
+                column: "Nome",
+                unique: true);
+        }
+
+        /// <inheritdoc />
+        protected override void Down(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.DropTable(
+                name: "TagsCatalogo");
+        }
+    }
+}

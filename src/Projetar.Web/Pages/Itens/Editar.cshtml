@@ -1,44 +1,168 @@
 @page "/Itens/{slug}/Editar"
 @model Projetar.Web.Pages.Itens.EditarModel
 @{
+    Layout = "_LayoutPj";
+    var mandamento = Model.ItemAtual.Mandamento!;
     ViewData["Title"] = $"Propor edição — {Model.ItemAtual.Titulo}";
+    ViewData["NavAtivo"] = "Propostas";
 }
 
-<div class="gbr-card gbr-edit-card">
-    <span class="gbr-eyebrow">Mandamento @Model.ItemAtual.Mandamento!.Id</span>
-    <h1 class="gbr-h3">Propor edição</h1>
-    <p class="gbr-muted" style="margin-bottom:var(--gbr-space-6);">
-        "@Model.ItemAtual.Titulo" — o texto original abaixo não pode ser reescrito do zero.
-        Edite só o parágrafo que quer mudar, ou adicione um parágrafo novo. Sua proposta fica pendente
-        até um revisor ou administrador aprovar. Se não for aprovada, o texto atual continua valendo e você verá o motivo.
-    </p>
+<div class="pj-shell pj-breadcrumb">
+    <a href="/">Início</a><span class="sep">/</span>
+    <a href="/">Princípio @mandamento.Id</a><span class="sep">/</span>
+    <a href="/Itens/@Model.ItemAtual.Slug">@Model.ItemAtual.Titulo</a><span class="sep">/</span>
+    <span class="current">Editar</span>
+</div>
 
-    <div asp-validation-summary="ModelOnly" class="gbr-alert gbr-alert--danger" role="alert"></div>
+<div class="pj-edit--single">
 
-    <form method="post" class="gbr-stack">
-        <div class="gbr-field">
-            <label class="gbr-label">Texto</label>
-            <div id="paragraph-editor-container"></div>
-            <textarea class="gbr-textarea" asp-for="Input.CorpoNovo" style="display:none;"></textarea>
-            <span class="gbr-help gbr-help--error" asp-validation-for="Input.CorpoNovo"></span>
+    <div class="pj-card">
+
+        @* ---------- Banner ---------- *@
+        @if (TempData["MensagemErroBanner"] is string erroBanner)
+        {
+            <div class="pj-edit-banner-error">@erroBanner</div>
+        }
+
+        @if (Model.EhAdmin)
+        {
+            <form method="post" asp-page-handler="Banner" enctype="multipart/form-data" id="pjBannerForm">
+                <input type="file" id="pj-banner-file" name="NovoBanner" accept="image/jpeg,image/png,image/webp" style="display:none;" onchange="this.form.submit()" />
+            </form>
+
+            @if (!string.IsNullOrWhiteSpace(Model.ItemAtual.BannerImagem))
+            {
+                <div class="pj-edit-banner">
+                    <img src="@Model.ItemAtual.BannerImagem" alt="Banner do item" />
+                    <span class="pj-edit-banner__status"><i></i>Salvo</span>
+                    <div class="pj-edit-banner__tools">
+                        <button type="button" class="pj-icon-btn" title="Editar banner" onclick="document.getElementById('pjBannerMenu').hidden = !document.getElementById('pjBannerMenu').hidden">
+                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
+                        </button>
+                        <div class="pj-menu" id="pjBannerMenu" hidden>
+                            <label for="pj-banner-file" class="pj-menu__item" onclick="document.getElementById('pjBannerMenu').hidden = true;">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8" /><path d="M21 3v5h-5" /></svg>
+                                Trocar imagem
+                            </label>
+                            <form method="post" asp-page-handler="RemoverBanner">
+                                <button type="submit" class="pj-menu__item pj-menu__item--danger">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M19 6l-1 14H6L5 6" /></svg>
+                                    Excluir banner
+                                </button>
+                            </form>
+                            <div class="pj-menu__note">JPG, PNG ou WEBP · máx. 5 MB · 1600 × 500 px</div>
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <label for="pj-banner-file" class="pj-edit-banner-empty">
+                    <span class="plus">+</span>
+                    <span class="title">Adicionar banner</span>
+                    <span class="hint">JPG, PNG ou WEBP · máx. 5 MB · recomendado 1600 × 500 px</span>
+                </label>
+            }
+
+            @if (Model.BannerPendente is not null)
+            {
+                <div class="pj-edit-banner" style="margin-top:12px;">
+                    <img src="@Model.BannerPendente.CaminhoImagem" alt="Banner sugerido, em análise" />
+                    <span class="pj-edit-banner__status" style="background:var(--pj-gold-soft); color:#8A6410;"><i style="background:var(--pj-gold);"></i>Em análise</span>
+                    <div class="pj-edit-banner__tools">
+                        <form method="post" asp-page-handler="CancelarBannerPendente">
+                            <button type="submit" class="pj-icon-btn" title="Cancelar sugestão">&times;</button>
+                        </form>
+                    </div>
+                </div>
+                <p class="pj-edit-help" style="margin:8px 0 0;">Esse banner só substitui o atual depois que um revisor aprovar na moderação.</p>
+            }
+        }
+        else if (!string.IsNullOrWhiteSpace(Model.ItemAtual.BannerImagem))
+        {
+            <div class="pj-edit-banner">
+                <img src="@Model.ItemAtual.BannerImagem" alt="Banner do item" />
+            </div>
+        }
+
+        @* ---------- Cabeçalho ---------- *@
+        <div class="pj-edit-head">
+            <span class="pj-chip-green">Princípio @mandamento.Id</span>
+            <h1>Propor edição</h1>
+            <p class="sub">"@Model.ItemAtual.Titulo"</p>
+            <div class="pj-edit-info">
+                <span class="i">i</span>
+                <div>
+                    Edite o texto completo abaixo à vontade. Sua proposta fica pendente até um revisor ou
+                    administrador comparar com o texto atual e aprovar. Se não for aprovada, o texto atual
+                    continua valendo e você verá o motivo.
+                </div>
+            </div>
         </div>
 
-        <div class="gbr-field">
-            <label class="gbr-label" asp-for="Input.ComentarioDaMudanca"></label>
-            <textarea class="gbr-textarea" asp-for="Input.ComentarioDaMudanca" rows="3"></textarea>
-        </div>
+        <div asp-validation-summary="ModelOnly" class="pj-edit-banner-error" style="margin:0 40px;" role="alert"></div>
 
-        <div class="gbr-row" style="justify-content:flex-end;">
-            <a href="/Itens/@Model.ItemAtual.Slug" class="gbr-btn gbr-btn--ghost">Cancelar</a>
-            <button type="submit" class="gbr-btn gbr-btn--primary">Enviar para revisão</button>
-        </div>
-    </form>
+        <form method="post" data-pj-editor id="pjEditForm">
+            @* ---------- Editor ---------- *@
+            <div class="pj-edit-body">
+                <div class="pj-edit-label">
+                    <span>Texto</span>
+                    <button type="button" class="pj-link-btn" data-pj-restore>Restaurar original</button>
+                </div>
+
+                <div class="pj-editor">
+                    <div class="pj-editor__toolbar">
+                        <button type="button" data-pj-exec="formatBlock" data-pj-value="p" title="Parágrafo">Texto</button>
+                        <button type="button" class="h" data-pj-exec="formatBlock" data-pj-value="h3" title="Título">Título</button>
+                        <span class="sep"></span>
+                        <button type="button" class="sq b" data-pj-exec="bold" title="Negrito">B</button>
+                        <button type="button" class="sq i" data-pj-exec="italic" title="Itálico">I</button>
+                        <button type="button" class="sq u" data-pj-exec="underline" title="Sublinhado">U</button>
+                        <span class="sep"></span>
+                        <button type="button" class="sq" data-pj-exec="insertOrderedList" title="Lista numerada">1.</button>
+                        <button type="button" class="sq" data-pj-exec="insertUnorderedList" title="Lista">&bull;</button>
+                        <button type="button" class="sq q" data-pj-exec="formatBlock" data-pj-value="blockquote" title="Citação">&rdquo;</button>
+                        <button type="button" class="sq" data-pj-link title="Link">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1" /><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1" /></svg>
+                        </button>
+                        <button type="button" class="sq muted" data-pj-exec="removeFormat" title="Limpar formatação">Tx</button>
+                        <span class="grow"></span>
+                        <button type="button" class="sq muted" data-pj-exec="undo" title="Desfazer">&#8630;</button>
+                        <button type="button" class="sq muted" data-pj-exec="redo" title="Refazer">&#8631;</button>
+                    </div>
+                    <div class="pj-editor__content" contenteditable="true" data-pj-content>@Html.Raw(Model.Input.CorpoNovo)</div>
+                </div>
+
+                <div data-pj-original hidden>@Html.Raw(Model.ItemAtual.Corpo)</div>
+            </div>
+
+            @* ---------- Justificativa + ações ---------- *@
+            <div class="pj-edit-foot">
+                <label for="reason" class="pj-edit-label"><span>O que mudou e por quê <small>(opcional)</small></span></label>
+                <div class="pj-edit-help">Ajuda o revisor a entender e aprovar mais rápido.</div>
+                <textarea id="reason" name="Input.ComentarioDaMudanca" rows="4" class="pj-textarea"
+                          placeholder="Ex.: atualizei o número de distritos e acrescentei a fonte do TSE.">@Model.Input.ComentarioDaMudanca</textarea>
+
+                <div class="pj-edit-actions">
+                    <a href="/Itens/@Model.ItemAtual.Slug#tags" class="pj-edit-actions__note">
+                        As tags do item se gerenciam direto na <span>página do item</span>.
+                    </a>
+                    <div class="pj-edit-actions__buttons">
+                        <a href="/Itens/@Model.ItemAtual.Slug" class="pj-edit-cancel">Cancelar</a>
+                        <textarea name="Input.CorpoNovo" data-pj-hidden-input style="display:none;"></textarea>
+                        <button type="submit" class="pj-btn pj-btn--navy" data-pj-submit disabled>Enviar para revisão</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="pj-edit-admin-note">
+        <i></i>O banner só pode ser alterado por administradores e é salvo na hora, sem passar por revisão.
+    </div>
 </div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <link rel="stylesheet" href="~/lib/quill/quill.snow.css" />
-    <script src="~/lib/quill/quill.js"></script>
-    <script src="~/js/paragraph-editor.js" asp-append-version="true"></script>
-    <script>initParagraphEditor('Input_CorpoNovo', 'paragraph-editor-container');</script>
+    <script src="~/js/projeta-editor.js" asp-append-version="true"></script>
 }

@@ -483,3 +483,6 @@ $RECYCLE.BIN/
 
 # Arquivos enviados por usuários (referências/documentos) — armazenados fora de wwwroot
 src/Projetar.Web/App_Data/
+
+# Banners de item enviados por administradores — imagem pública, mas não faz parte do código-fonte
+src/Projetar.Web/wwwroot/uploads/

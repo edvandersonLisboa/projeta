@@ -1,208 +1,590 @@
 @page
 @model Projetar.Web.Pages.Moderacao.IndexModel
+@using Projetar.Web.Models
+@using Projetar.Web.Services
+@using Projetar.Web.Pages.Shared
 @{
-    ViewData["Title"] = "Moderação";
-    var total = Model.Pendentes.Count + Model.ReferenciasPendentes.Count + Model.DocumentosPendentes.Count + Model.ItensPropostos.Count;
+    ViewData["Title"] = "Fila de moderação";
+    ViewData["NavAtivo"] = "Moderação";
+
+    bool EhAntigo(DateTimeOffset d) => (DateTimeOffset.UtcNow - d).TotalHours >= 48;
+    string QueryTab(string tab) => Url.Page("/Moderacao/Index", new { tab })!;
 }
 
-<h1 class="gbr-h2">Fila de moderação</h1>
-<p class="gbr-lead" style="margin-bottom:var(--gbr-space-6);">
-    @total ite(ns) aguardando revisão.
-</p>
+<div class="pj-shell pj-mod-head">
+    <div>
+        <span class="pj-eyebrow">Área do revisor</span>
+        <h1>Fila de moderação</h1>
+    </div>
+    <div class="pj-mod-stats">
+        <div><b class="navy">@Model.TotalPendentes</b><span>Aguardando revisão</span></div>
+        <div><b class="gold">@Model.AguardandoRespostaCount</b><span>Conversas sem resposta</span></div>
+        <div><b class="green">@Model.OldestLabel</b><span>Mais antigo na fila</span></div>
+    </div>
+</div>
 
-@if (TempData["MensagemSucesso"] is string sucesso)
-{
-    <div class="gbr-alert gbr-alert--success" role="status"><div class="gbr-alert__body">@sucesso</div></div>
-}
-@if (TempData["MensagemErro"] is string erro)
-{
-    <div class="gbr-alert gbr-alert--danger" role="alert"><div class="gbr-alert__body">@erro</div></div>
-}
+<div class="pj-shell pj-mod-body">
+    <nav class="pj-mod-nav" aria-label="Categorias">
+        @foreach (var t in Projetar.Web.Pages.Moderacao.IndexModel.Tabs)
+        {
+            var n = Model.CountFor(t.Key);
+            var ativo = Model.Tab == t.Key;
+            <a href="@QueryTab(t.Key)" class="pj-mod-tab @(ativo ? "is-active" : "") @(n == 0 && !ativo ? "is-dim" : "") @(t.Key == "threads" ? "is-threads" : "")">
+                <span class="dot"></span>
+                <span class="label">@t.Label</span>
+                <span class="count @(n > 0 ? "has" : "")">@n</span>
+            </a>
+        }
+    </nav>
 
-<h2 class="gbr-h4">Edições de texto (@Model.Pendentes.Count)</h2>
-@if (Model.Pendentes.Count == 0)
-{
-    <p class="gbr-muted">Nenhuma edição pendente.</p>
-}
-<div class="gbr-stack" style="margin-bottom:var(--gbr-space-8);">
-    @foreach (var revisao in Model.Pendentes)
-    {
-        <div class="gbr-card gbr-moderacao-item">
-            <div class="gbr-row" style="justify-content:space-between;">
-                <div>
-                    <span class="gbr-eyebrow">Mandamento @revisao.Item!.Mandamento!.Id</span>
-                    <h3 class="gbr-h4" style="margin-top:var(--gbr-space-1);">@revisao.Item.Titulo</h3>
-                </div>
-                <span class="gbr-badge">@revisao.DataRevisao.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
-            </div>
+    <div class="pj-mod-main">
+        <div class="pj-mod-main__head">
+            <h2>@Projetar.Web.Pages.Moderacao.IndexModel.Tabs.First(t => t.Key == Model.Tab).Label</h2>
+            <span>@Projetar.Web.Pages.Moderacao.IndexModel.TabHint(Model.Tab)</span>
+        </div>
 
-            <p class="gbr-muted" style="margin:var(--gbr-space-2) 0 var(--gbr-space-4);">
-                Proposto por <strong>@(revisao.AutorUsuario?.NomeCompleto ?? "Usuário removido")</strong>
-                @if (revisao.Apoios.Count > 0)
+        @if (Model.Tab != "threads")
+        {
+            var mostrarEdit = Model.Tab is "all" or "edit";
+            var mostrarItem = Model.Tab is "all" or "item";
+            var mostrarRef = Model.Tab is "all" or "ref";
+            var mostrarDoc = Model.Tab is "all" or "doc";
+            var mostrarTag = Model.Tab is "all" or "tag";
+            var mostrarBanner = Model.Tab is "all" or "banner";
+            var totalVisivel = (mostrarEdit ? Model.Pendentes.Count : 0) + (mostrarItem ? Model.ItensPropostos.Count : 0)
+                + (mostrarRef ? Model.ReferenciasPendentes.Count : 0) + (mostrarDoc ? Model.DocumentosPendentes.Count : 0)
+                + (mostrarTag ? Model.TagsPendentes.Count : 0) + (mostrarBanner ? Model.BannersPendentes.Count : 0);
+
+            @if (mostrarEdit)
+            {
+                @foreach (var revisao in Model.Pendentes)
                 {
-                    <span class="gbr-badge gbr-badge--success">@revisao.Apoios.Count apoio@(revisao.Apoios.Count == 1 ? "" : "s")</span>
+                    <article class="pj-mod-card">
+                        <div class="pj-mod-card__body">
+                            <div class="pj-mod-card__meta">
+                                <span class="pj-type pj-type--edit">Edição de texto</span>
+                                <span class="ctx">Princípio @revisao.Item!.Mandamento!.Id</span>
+                                <span class="grow"></span>
+                                <span class="age @(EhAntigo(revisao.DataRevisao) ? "is-old" : "")">@TempoRelativo.Formatar(revisao.DataRevisao)</span>
+                            </div>
+                            <h3>@revisao.Item.Titulo</h3>
+                            <div class="by">
+                                Enviado por <b>@(revisao.AutorUsuario?.NomeCompleto ?? "Usuário removido")</b>
+                                @if (revisao.Apoios.Count > 0)
+                                {
+                                    <span> · @revisao.Apoios.Count apoio@(revisao.Apoios.Count == 1 ? "" : "s")</span>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(revisao.ComentarioDaMudanca))
+                                {
+                                    <span> — "@revisao.ComentarioDaMudanca"</span>
+                                }
+                            </div>
+                            <div class="pj-mod-preview">@Html.Raw(Model.Redline(revisao.CorpoAnterior, revisao.CorpoNovo))</div>
+
+                            <details class="gbr-moderacao-formatacao" style="margin-top:10px;">
+                                <summary class="pj-link-btn">Ver formatação completa</summary>
+                                <div class="gbr-row" style="align-items:stretch;gap:16px;margin-top:8px;">
+                                    <div style="flex:1;min-width:0;">
+                                        <p class="gbr-label">Texto atual</p>
+                                        <div class="gbr-moderacao-diff gbr-moderacao-diff--atual">@Html.Raw(Model.Render(revisao.CorpoAnterior))</div>
+                                    </div>
+                                    <div style="flex:1;min-width:0;">
+                                        <p class="gbr-label">Proposta</p>
+                                        <div class="gbr-moderacao-diff gbr-moderacao-diff--novo">@Html.Raw(Model.Render(revisao.CorpoNovo))</div>
+                                    </div>
+                                </div>
+                            </details>
+
+                            <details class="gbr-moderacao-editar" style="margin-top:8px;">
+                                <summary class="pj-link-btn">Editar antes de aprovar</summary>
+                                <form method="post" asp-page-handler="Aprovar" data-mod-editor class="gbr-stack" style="margin-top:10px;">
+                                    <input type="hidden" name="Aprovar.AlvoId" value="@revisao.Id" />
+                                    <div class="gbr-row" style="gap:4px;">
+                                        <button type="button" class="gbr-btn gbr-btn--ghost gbr-btn--sm" data-mod-exec="bold" title="Negrito"><strong>B</strong></button>
+                                        <button type="button" class="gbr-btn gbr-btn--ghost gbr-btn--sm" data-mod-exec="italic" title="Itálico"><em>I</em></button>
+                                        <button type="button" class="gbr-btn gbr-btn--ghost gbr-btn--sm" data-mod-exec="underline" title="Sublinhado"><u>U</u></button>
+                                        <button type="button" class="gbr-btn gbr-btn--ghost gbr-btn--sm" data-mod-exec="insertUnorderedList" title="Lista">&bull;</button>
+                                        <button type="button" class="gbr-btn gbr-btn--ghost gbr-btn--sm" data-mod-exec="insertOrderedList" title="Lista numerada">1.</button>
+                                        <button type="button" class="gbr-btn gbr-btn--ghost gbr-btn--sm" data-mod-link title="Link">Link</button>
+                                    </div>
+                                    <div class="gbr-moderacao-editor-content" contenteditable="true" data-mod-content>@Html.Raw(revisao.CorpoNovo)</div>
+                                    <textarea name="Aprovar.CorpoAjustado" data-mod-hidden style="display:none;"></textarea>
+                                    <textarea name="Aprovar.ComentarioDaModeracao" class="pj-textarea" rows="2" placeholder="O que foi ajustado (obrigatório só se você alterar o texto acima)"></textarea>
+                                    <div class="gbr-row" style="justify-content:flex-end;">
+                                        <button type="submit" class="pj-btn pj-btn--navy pj-btn--sm">Aprovar com este texto</button>
+                                    </div>
+                                </form>
+                            </details>
+                        </div>
+
+                        <div class="pj-mod-card__actions">
+                            <a href="/Itens/@revisao.Item.Slug" class="open" target="_blank">Abrir →</a>
+                            <span class="grow"></span>
+                            <button type="button" class="pj-btn pj-btn--reject" data-reject-toggle>Rejeitar</button>
+                            <form method="post" asp-page-handler="Aprovar">
+                                <input type="hidden" name="Aprovar.AlvoId" value="@revisao.Id" />
+                                <button type="submit" class="pj-btn pj-btn--green">Aprovar</button>
+                            </form>
+                        </div>
+                        <div class="pj-mod-reject" data-reject-panel hidden>
+                            <div class="title">Motivo da rejeição <span>— o autor recebe esta mensagem</span></div>
+                            <div class="quick">
+                                @foreach (var q in Projetar.Web.Pages.Moderacao.IndexModel.MotivosRapidos)
+                                {
+                                    <button type="button" data-quick-reason="motivo-edit-@revisao.Id">@q</button>
+                                }
+                            </div>
+                            <form method="post" asp-page-handler="Rejeitar">
+                                <input type="hidden" name="Rejeitar.AlvoId" value="@revisao.Id" />
+                                <textarea id="motivo-edit-@revisao.Id" name="Rejeitar.Motivo" rows="3" class="pj-textarea" placeholder="Explique o que falta para a proposta ser aprovada…" required></textarea>
+                                <div class="actions">
+                                    <button type="submit" class="pj-btn pj-btn--danger">Rejeitar e avisar autor</button>
+                                </div>
+                            </form>
+                        </div>
+                    </article>
                 }
-                @if (!string.IsNullOrWhiteSpace(revisao.ComentarioDaMudanca))
+            }
+
+            @if (mostrarItem)
+            {
+                <details class="gbr-moderacao-criar" style="margin-bottom:14px;">
+                    <summary class="pj-btn pj-btn--outline-navy pj-btn--sm">+ Propor novo item</summary>
+                    <form method="post" asp-page-handler="CriarItem" class="gbr-card gbr-stack" style="margin-top:12px;max-width:640px;padding:18px;">
+                        <div class="gbr-field">
+                            <label class="gbr-label" asp-for="NovoItemProposto.MandamentoId">Princípio</label>
+                            <select class="gbr-select" asp-for="NovoItemProposto.MandamentoId">
+                                <option value="">Escolha o princípio...</option>
+                                @foreach (var mandamento in Model.TodosMandamentos)
+                                {
+                                    <option value="@mandamento.Id">Princípio @mandamento.Id — @mandamento.Secular</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="gbr-field">
+                            <label class="gbr-label" asp-for="NovoItemProposto.Titulo"></label>
+                            <input class="gbr-input" asp-for="NovoItemProposto.Titulo" />
+                        </div>
+                        <div class="gbr-field">
+                            <label class="gbr-label" asp-for="NovoItemProposto.Corpo">Texto</label>
+                            <textarea class="gbr-textarea" asp-for="NovoItemProposto.Corpo" rows="8"></textarea>
+                        </div>
+                        <div class="gbr-row" style="justify-content:flex-end;">
+                            <button type="submit" class="pj-btn pj-btn--navy pj-btn--sm">Propor item</button>
+                        </div>
+                    </form>
+                </details>
+
+                @foreach (var item in Model.ItensPropostos)
                 {
-                    <span> — "@revisao.ComentarioDaMudanca"</span>
+                    <article class="pj-mod-card">
+                        <div class="pj-mod-card__body">
+                            <div class="pj-mod-card__meta">
+                                <span class="pj-type pj-type--item">Novo item</span>
+                                <span class="ctx">Princípio @item.Mandamento!.Id — @item.Mandamento.Secular</span>
+                                <span class="grow"></span>
+                                <span class="age @(EhAntigo(item.DataCriacao) ? "is-old" : "")">@TempoRelativo.Formatar(item.DataCriacao)</span>
+                            </div>
+                            <h3>@item.Titulo</h3>
+                            <div class="by">Enviado por <b>@(item.CriadoPorUsuario?.NomeCompleto ?? "Usuário removido")</b></div>
+                            <div class="pj-mod-preview is-muted">@RichTextUtils.Excerto(item.Corpo)</div>
+                        </div>
+                        <div class="pj-mod-card__actions">
+                            <a href="/Itens/@item.Slug" class="open" target="_blank">Abrir →</a>
+                            <span class="grow"></span>
+                            <button type="button" class="pj-btn pj-btn--reject" data-reject-toggle>Rejeitar</button>
+                            <form method="post" asp-page-handler="AprovarItem" asp-route-id="@item.Id">
+                                <button type="submit" class="pj-btn pj-btn--green">Aprovar</button>
+                            </form>
+                        </div>
+                        <div class="pj-mod-reject" data-reject-panel hidden>
+                            <div class="title">Motivo da rejeição <span>— o autor recebe esta mensagem</span></div>
+                            <div class="quick">
+                                @foreach (var q in Projetar.Web.Pages.Moderacao.IndexModel.MotivosRapidos)
+                                {
+                                    <button type="button" data-quick-reason="motivo-item-@item.Id">@q</button>
+                                }
+                            </div>
+                            <form method="post" asp-page-handler="RejeitarItem">
+                                <input type="hidden" name="RejeitarItem.AlvoId" value="@item.Id" />
+                                <textarea id="motivo-item-@item.Id" name="RejeitarItem.Motivo" rows="3" class="pj-textarea" placeholder="Explique o que falta para a proposta ser aprovada…" required></textarea>
+                                <div class="actions">
+                                    <button type="submit" class="pj-btn pj-btn--danger">Rejeitar e avisar autor</button>
+                                </div>
+                            </form>
+                        </div>
+                    </article>
                 }
-            </p>
+            }
 
-            <p class="gbr-label">O que mudou</p>
-            <div class="gbr-moderacao-redline">@Html.Raw(Model.Redline(revisao.CorpoAnterior, revisao.CorpoNovo))</div>
+            @if (mostrarRef)
+            {
+                <details class="gbr-moderacao-criar" style="margin-bottom:14px;">
+                    <summary class="pj-btn pj-btn--outline-navy pj-btn--sm">+ Adicionar referência</summary>
+                    <form method="post" asp-page-handler="CriarReferencia" class="gbr-card gbr-stack" style="margin-top:12px;max-width:520px;padding:18px;">
+                        <div class="gbr-field">
+                            <label class="gbr-label" asp-for="NovaReferencia.ItemId">Item</label>
+                            <select class="gbr-select" asp-for="NovaReferencia.ItemId">
+                                <option value="">Escolha o item...</option>
+                                @foreach (var item in Model.TodosItens)
+                                {
+                                    <option value="@item.Id">Princípio @item.Mandamento!.Id — @item.Titulo</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="gbr-field">
+                            <label class="gbr-label" asp-for="NovaReferencia.Titulo"></label>
+                            <input class="gbr-input" asp-for="NovaReferencia.Titulo" />
+                        </div>
+                        <div class="gbr-field">
+                            <label class="gbr-label" asp-for="NovaReferencia.Url">URL</label>
+                            <input class="gbr-input" asp-for="NovaReferencia.Url" placeholder="https://" />
+                        </div>
+                        <div class="gbr-field">
+                            <label class="gbr-label" asp-for="NovaReferencia.Tipo"></label>
+                            <select class="gbr-select" asp-for="NovaReferencia.Tipo" asp-items="Html.GetEnumSelectList<ReferenciaTipo>()"></select>
+                        </div>
+                        <div class="gbr-row" style="justify-content:flex-end;">
+                            <button type="submit" class="pj-btn pj-btn--navy pj-btn--sm">Criar referência</button>
+                        </div>
+                    </form>
+                </details>
 
-            <details class="gbr-moderacao-formatacao">
-                <summary class="gbr-btn gbr-btn--ghost gbr-btn--sm">Ver formatação completa</summary>
-                <div class="gbr-row" style="align-items:stretch;gap:var(--gbr-space-4);margin-top:var(--gbr-space-2);">
-                    <div style="flex:1;min-width:0;">
-                        <p class="gbr-label">Texto atual</p>
-                        <div class="gbr-moderacao-diff gbr-moderacao-diff--atual">@Html.Raw(Model.Render(revisao.CorpoAnterior))</div>
+                @foreach (var referencia in Model.ReferenciasPendentes)
+                {
+                    <article class="pj-mod-card">
+                        <div class="pj-mod-card__body">
+                            <div class="pj-mod-card__meta">
+                                <span class="pj-type pj-type--ref">Referência</span>
+                                <span class="ctx">Princípio @referencia.Item!.Mandamento!.Id — @referencia.Item.Titulo</span>
+                                <span class="grow"></span>
+                                <span class="age @(EhAntigo(referencia.DataCriacao) ? "is-old" : "")">@TempoRelativo.Formatar(referencia.DataCriacao)</span>
+                            </div>
+                            <h3>@referencia.Titulo</h3>
+                            <div class="by">Enviado por <b>@(referencia.Usuario?.NomeCompleto ?? "Usuário removido")</b></div>
+                            <div class="pj-mod-preview pj-mod-link">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1" /><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1" /></svg>
+                                <span>@referencia.Url</span>
+                            </div>
+                        </div>
+                        <div class="pj-mod-card__actions">
+                            <a href="@referencia.Url" class="open" target="_blank" rel="noopener noreferrer">Abrir →</a>
+                            <span class="grow"></span>
+                            <button type="button" class="pj-btn pj-btn--reject" data-reject-toggle>Rejeitar</button>
+                            <form method="post" asp-page-handler="AprovarReferencia" asp-route-id="@referencia.Id">
+                                <button type="submit" class="pj-btn pj-btn--green">Aprovar</button>
+                            </form>
+                        </div>
+                        <div class="pj-mod-reject" data-reject-panel hidden>
+                            <div class="title">Motivo da rejeição <span>— o autor recebe esta mensagem</span></div>
+                            <div class="quick">
+                                @foreach (var q in Projetar.Web.Pages.Moderacao.IndexModel.MotivosRapidos)
+                                {
+                                    <button type="button" data-quick-reason="motivo-ref-@referencia.Id">@q</button>
+                                }
+                            </div>
+                            <form method="post" asp-page-handler="RejeitarReferencia">
+                                <input type="hidden" name="RejeitarReferencia.AlvoId" value="@referencia.Id" />
+                                <textarea id="motivo-ref-@referencia.Id" name="RejeitarReferencia.Motivo" rows="3" class="pj-textarea" placeholder="Explique o que falta para a proposta ser aprovada…" required></textarea>
+                                <div class="actions">
+                                    <button type="submit" class="pj-btn pj-btn--danger">Rejeitar e avisar autor</button>
+                                </div>
+                            </form>
+                        </div>
+                    </article>
+                }
+            }
+
+            @if (mostrarDoc)
+            {
+                <details class="gbr-moderacao-criar" style="margin-bottom:14px;">
+                    <summary class="pj-btn pj-btn--outline-navy pj-btn--sm">+ Enviar documento</summary>
+                    <form method="post" asp-page-handler="CriarDocumento" enctype="multipart/form-data" class="gbr-card gbr-stack" style="margin-top:12px;max-width:520px;padding:18px;">
+                        <div class="gbr-field">
+                            <label class="gbr-label" asp-for="NovoDocumento.ItemId">Item</label>
+                            <select class="gbr-select" asp-for="NovoDocumento.ItemId">
+                                <option value="">Escolha o item...</option>
+                                @foreach (var item in Model.TodosItens)
+                                {
+                                    <option value="@item.Id">Princípio @item.Mandamento!.Id — @item.Titulo</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="gbr-field">
+                            <label class="gbr-label" for="arquivo">Arquivo (PDF, Word, imagem ou TXT — máx. 10 MB)</label>
+                            <input class="gbr-input" type="file" id="arquivo" name="arquivo" />
+                        </div>
+                        <div class="gbr-row" style="justify-content:flex-end;">
+                            <button type="submit" class="pj-btn pj-btn--navy pj-btn--sm">Enviar documento</button>
+                        </div>
+                    </form>
+                </details>
+
+                @foreach (var documento in Model.DocumentosPendentes)
+                {
+                    <article class="pj-mod-card">
+                        <div class="pj-mod-card__body">
+                            <div class="pj-mod-card__meta">
+                                <span class="pj-type pj-type--doc">Documento</span>
+                                <span class="ctx">Princípio @documento.Item!.Mandamento!.Id — @documento.Item.Titulo</span>
+                                <span class="grow"></span>
+                                <span class="age @(EhAntigo(documento.DataUpload) ? "is-old" : "")">@TempoRelativo.Formatar(documento.DataUpload)</span>
+                            </div>
+                            <h3>@documento.NomeOriginal</h3>
+                            <div class="by">Enviado por <b>@(documento.Usuario?.NomeCompleto ?? "Usuário removido")</b> · @((documento.TamanhoBytes / 1024.0).ToString("0")) KB</div>
+                        </div>
+                        <div class="pj-mod-card__actions">
+                            <a asp-page="/Itens/Index" asp-page-handler="Baixar" asp-route-slug="@documento.Item.Slug" asp-route-id="@documento.Id" class="open">Abrir →</a>
+                            <span class="grow"></span>
+                            <button type="button" class="pj-btn pj-btn--reject" data-reject-toggle>Rejeitar</button>
+                            <form method="post" asp-page-handler="AprovarDocumento" asp-route-id="@documento.Id">
+                                <button type="submit" class="pj-btn pj-btn--green">Aprovar</button>
+                            </form>
+                        </div>
+                        <div class="pj-mod-reject" data-reject-panel hidden>
+                            <div class="title">Motivo da rejeição <span>— o autor recebe esta mensagem</span></div>
+                            <div class="quick">
+                                @foreach (var q in Projetar.Web.Pages.Moderacao.IndexModel.MotivosRapidos)
+                                {
+                                    <button type="button" data-quick-reason="motivo-doc-@documento.Id">@q</button>
+                                }
+                            </div>
+                            <form method="post" asp-page-handler="RejeitarDocumento">
+                                <input type="hidden" name="RejeitarDocumento.AlvoId" value="@documento.Id" />
+                                <textarea id="motivo-doc-@documento.Id" name="RejeitarDocumento.Motivo" rows="3" class="pj-textarea" placeholder="Explique o que falta para a proposta ser aprovada…" required></textarea>
+                                <div class="actions">
+                                    <button type="submit" class="pj-btn pj-btn--danger">Rejeitar e avisar autor</button>
+                                </div>
+                            </form>
+                        </div>
+                    </article>
+                }
+            }
+
+            @if (mostrarTag)
+            {
+                @foreach (var sugestao in Model.TagsPendentes)
+                {
+                    <article class="pj-mod-card">
+                        <div class="pj-mod-card__body">
+                            <div class="pj-mod-card__meta">
+                                <span class="pj-type pj-type--tag">Tag</span>
+                                <span class="ctx">Princípio @sugestao.Item!.Mandamento!.Id — @sugestao.Item.Titulo</span>
+                                <span class="grow"></span>
+                                <span class="age @(EhAntigo(sugestao.DataCriacao) ? "is-old" : "")">@TempoRelativo.Formatar(sugestao.DataCriacao)</span>
+                            </div>
+                            <h3>@sugestao.Item.Titulo</h3>
+                            <div class="by">Sugerida por <b>@(sugestao.Usuario?.NomeCompleto ?? "Usuário removido")</b></div>
+                            <div class="pj-mod-tag"><span>Tag sugerida:</span><b>@sugestao.Nome</b></div>
+                        </div>
+                        <div class="pj-mod-card__actions">
+                            <a href="/Itens/@sugestao.Item.Slug#tags" class="open" target="_blank">Abrir →</a>
+                            <span class="grow"></span>
+                            <button type="button" class="pj-btn pj-btn--reject" data-reject-toggle>Rejeitar</button>
+                            <form method="post" asp-page-handler="AprovarTag" asp-route-id="@sugestao.Id">
+                                <button type="submit" class="pj-btn pj-btn--green">Aprovar</button>
+                            </form>
+                        </div>
+                        <div class="pj-mod-reject" data-reject-panel hidden>
+                            <div class="title">Motivo da rejeição <span>— o autor recebe esta mensagem</span></div>
+                            <div class="quick">
+                                @foreach (var q in Projetar.Web.Pages.Moderacao.IndexModel.MotivosRapidos)
+                                {
+                                    <button type="button" data-quick-reason="motivo-tag-@sugestao.Id">@q</button>
+                                }
+                            </div>
+                            <form method="post" asp-page-handler="RejeitarTag">
+                                <input type="hidden" name="RejeitarTag.AlvoId" value="@sugestao.Id" />
+                                <textarea id="motivo-tag-@sugestao.Id" name="RejeitarTag.Motivo" rows="3" class="pj-textarea" placeholder="Explique o que falta para a proposta ser aprovada…" required></textarea>
+                                <div class="actions">
+                                    <button type="submit" class="pj-btn pj-btn--danger">Rejeitar e avisar autor</button>
+                                </div>
+                            </form>
+                        </div>
+                    </article>
+                }
+            }
+
+            @if (mostrarBanner)
+            {
+                @foreach (var sugestao in Model.BannersPendentes)
+                {
+                    <article class="pj-mod-card">
+                        <div class="pj-mod-card__body">
+                            <div class="pj-mod-card__meta">
+                                <span class="pj-type pj-type--banner">Banner</span>
+                                <span class="ctx">Princípio @sugestao.Item!.Mandamento!.Id — @sugestao.Item.Titulo</span>
+                                <span class="grow"></span>
+                                <span class="age @(EhAntigo(sugestao.DataCriacao) ? "is-old" : "")">@TempoRelativo.Formatar(sugestao.DataCriacao)</span>
+                            </div>
+                            <h3>@sugestao.Item.Titulo</h3>
+                            <div class="by">Enviado por <b>@(sugestao.Usuario?.NomeCompleto ?? "Usuário removido")</b></div>
+                            <img src="@sugestao.CaminhoImagem" alt="Banner proposto" style="max-width:100%;border-radius:10px;margin-top:12px;" />
+                        </div>
+                        <div class="pj-mod-card__actions">
+                            <a href="/Itens/@sugestao.Item.Slug" class="open" target="_blank">Abrir →</a>
+                            <span class="grow"></span>
+                            <button type="button" class="pj-btn pj-btn--reject" data-reject-toggle>Rejeitar</button>
+                            <form method="post" asp-page-handler="AprovarBanner" asp-route-id="@sugestao.Id">
+                                <button type="submit" class="pj-btn pj-btn--green">Aprovar</button>
+                            </form>
+                        </div>
+                        <div class="pj-mod-reject" data-reject-panel hidden>
+                            <div class="title">Motivo da rejeição <span>— o autor recebe esta mensagem</span></div>
+                            <div class="quick">
+                                @foreach (var q in Projetar.Web.Pages.Moderacao.IndexModel.MotivosRapidos)
+                                {
+                                    <button type="button" data-quick-reason="motivo-banner-@sugestao.Id">@q</button>
+                                }
+                            </div>
+                            <form method="post" asp-page-handler="RejeitarBanner">
+                                <input type="hidden" name="RejeitarBanner.AlvoId" value="@sugestao.Id" />
+                                <textarea id="motivo-banner-@sugestao.Id" name="RejeitarBanner.Motivo" rows="3" class="pj-textarea" placeholder="Explique o que falta para a proposta ser aprovada…" required></textarea>
+                                <div class="actions">
+                                    <button type="submit" class="pj-btn pj-btn--danger">Rejeitar e avisar autor</button>
+                                </div>
+                            </form>
+                        </div>
+                    </article>
+                }
+            }
+
+            @if (totalVisivel == 0)
+            {
+                <div class="pj-mod-empty">
+                    <span class="check">✓</span>
+                    <h3>@(Model.Tab == "all" ? "Fila zerada" : $"Nada pendente em {Projetar.Web.Pages.Moderacao.IndexModel.Tabs.First(t => t.Key == Model.Tab).Label.ToLowerInvariant()}")</h3>
+                    <p>@(Model.Tab == "all" ? "Não há submissões aguardando revisão. Novas propostas aparecem aqui assim que forem enviadas." : "Quando alguém enviar, aparece aqui.")</p>
+                    @if (Model.AguardandoRespostaCount > 0)
+                    {
+                        <a href="@QueryTab("threads")" class="pj-btn pj-btn--outline-navy pj-btn--sm">Ver conversas sem resposta</a>
+                    }
+                </div>
+            }
+        }
+        else
+        {
+            var linhas = Model.ConversasLinhas.Where(c => Model.ThreadFiltro switch
+            {
+                "waiting" => c.AguardandoResposta,
+                "resolved" => !c.AguardandoResposta,
+                _ => true,
+            });
+            if (!string.IsNullOrWhiteSpace(Model.ThreadBusca))
+            {
+                var q = Model.ThreadBusca.Trim();
+                linhas = linhas.Where(c => $"{c.AutorNome} {c.Submissao.Resumo} {c.Submissao.ItemTitulo}".Contains(q, StringComparison.OrdinalIgnoreCase));
+            }
+            var linhasList = linhas.OrderByDescending(c => c.Mensagens.Count > 0 ? c.Mensagens[^1].DataCriacao : DateTimeOffset.MinValue).ToList();
+            var selecionada = linhasList.FirstOrDefault(c => $"{c.Submissao.Tipo}-{c.Submissao.AlvoId}" == Model.ThreadSelecionado) ?? linhasList.FirstOrDefault();
+
+            <div class="pj-inbox">
+                <div class="pj-inbox__list">
+                    <div class="pj-inbox__tools">
+                        <form method="get" class="pj-inbox__search">
+                            <input type="hidden" name="tab" value="threads" />
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+                            <input type="text" name="threadBusca" value="@Model.ThreadBusca" placeholder="Buscar autor ou item" onchange="this.form.submit()" />
+                        </form>
+                        <div class="pj-segmented">
+                            @foreach (var f in Projetar.Web.Pages.Moderacao.IndexModel.ThreadFiltros)
+                            {
+                                var n = f.Key switch
+                                {
+                                    "waiting" => Model.ConversasLinhas.Count(c => c.AguardandoResposta),
+                                    "resolved" => Model.ConversasLinhas.Count(c => !c.AguardandoResposta),
+                                    _ => Model.ConversasLinhas.Count,
+                                };
+                                <a href="?tab=threads&amp;threadFiltro=@f.Key" class="@(Model.ThreadFiltro == f.Key ? "is-active" : "")">
+                                    @f.Label <span class="@(f.Key == "waiting" && n > 0 ? "warn" : "")">@n</span>
+                                </a>
+                            }
+                        </div>
                     </div>
-                    <div style="flex:1;min-width:0;">
-                        <p class="gbr-label">Proposta</p>
-                        <div class="gbr-moderacao-diff gbr-moderacao-diff--novo">@Html.Raw(Model.Render(revisao.CorpoNovo))</div>
+
+                    <div class="pj-inbox__rows">
+                        @foreach (var c in linhasList)
+                        {
+                            var chave = $"{c.Submissao.Tipo}-{c.Submissao.AlvoId}";
+                            var ultima = c.Mensagens.Count > 0 ? c.Mensagens[^1] : null;
+                            <a href="?tab=threads&amp;threadFiltro=@Model.ThreadFiltro&amp;thread=@chave" class="pj-inbox__row @(selecionada?.Submissao.AlvoId == c.Submissao.AlvoId ? "is-active" : "")">
+                                <span class="pj-avatar" style="background:@AvatarUtils.Color(c.AutorNome)">@AvatarUtils.Initials(c.AutorNome)</span>
+                                <span class="txt">
+                                    <span class="top">
+                                        <span class="author @(c.AguardandoResposta ? "is-waiting" : "")">@c.AutorNome</span>
+                                        <span class="when">@TempoRelativo.Formatar(c.Mensagens.Count > 0 ? c.Mensagens[^1].DataCriacao : c.Submissao.DataCriacao)</span>
+                                    </span>
+                                    <span class="title">@c.Submissao.TipoRotulo — @c.Submissao.Resumo</span>
+                                    <span class="preview">@(ultima is null ? "" : (ultima.AutorUsuarioId != c.Submissao.AutorUsuarioId ? "Você: " : "") + ultima.Texto)</span>
+                                    <span class="flags">
+                                        <span class="pj-status pj-status--@Projetar.Web.Pages.Moderacao.IndexModel.PjStatusKey(c.Submissao.Situacao)">@c.Submissao.StatusRotulo</span>
+                                        @if (c.AguardandoResposta)
+                                        {
+                                            <span class="waiting"><i></i>Aguardando</span>
+                                        }
+                                    </span>
+                                </span>
+                            </a>
+                        }
+                        @if (linhasList.Count == 0)
+                        {
+                            <div class="pj-inbox__empty">
+                                @(!string.IsNullOrWhiteSpace(Model.ThreadBusca)
+                                    ? $"Nenhuma conversa encontrada para \"{Model.ThreadBusca.Trim()}\"."
+                                    : Model.ThreadFiltro == "waiting" ? "Nenhum autor aguardando resposta." : "Nenhuma conversa aqui.")
+                            </div>
+                        }
                     </div>
                 </div>
-            </details>
 
-            <div class="gbr-row" style="justify-content:flex-end;margin-top:var(--gbr-space-4);">
-                <form method="post" asp-page-handler="Aprovar" asp-route-id="@revisao.Id">
-                    <button type="submit" class="gbr-btn gbr-btn--secondary">Aprovar</button>
-                </form>
+                @if (selecionada is not null)
+                {
+                    var c = selecionada;
+                    <div class="pj-inbox__detail">
+                        <div class="pj-inbox__detail-head">
+                            <div class="who">
+                                <span class="pj-avatar pj-avatar--lg" style="background:@AvatarUtils.Color(c.AutorNome)">@AvatarUtils.Initials(c.AutorNome)</span>
+                                <div>
+                                    <b>@c.AutorNome</b>
+                                    <small>@Model.ConversasLinhas.Count(x => x.AutorNome == c.AutorNome) conversa(s) com a moderação</small>
+                                </div>
+                                <span class="grow"></span>
+                                <span class="pj-status pj-status--@Projetar.Web.Pages.Moderacao.IndexModel.PjStatusKey(c.Submissao.Situacao)">@c.Submissao.StatusRotulo</span>
+                            </div>
+                            <div class="ctx">@c.Submissao.TipoRotulo — @c.Submissao.ItemTitulo</div>
+                            <h3>@c.Submissao.Resumo</h3>
+                            @if (!string.IsNullOrWhiteSpace(c.Submissao.MotivoRejeicao))
+                            {
+                                <div class="pj-reason"><b>Motivo da rejeição:</b> @c.Submissao.MotivoRejeicao</div>
+                            }
+                        </div>
 
-                <details class="gbr-moderacao-rejeitar">
-                    <summary class="gbr-btn gbr-btn--danger">Rejeitar</summary>
-                    <form method="post" asp-page-handler="Rejeitar" class="gbr-stack gbr-moderacao-rejeitar__form">
-                        <input type="hidden" name="Rejeitar.AlvoId" value="@revisao.Id" />
-                        <textarea name="Rejeitar.Motivo" class="gbr-textarea" rows="2" placeholder="Explique por que a edição não foi aceita..." required></textarea>
-                        <button type="submit" class="gbr-btn gbr-btn--danger gbr-btn--sm">Confirmar rejeição</button>
-                    </form>
-                </details>
+                        <partial name="_ChatThread" model="@(new ChatThreadViewModel {
+                            Mensagens = c.Mensagens,
+                            MeuUsuarioId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value,
+                            FormHandler = "ResponderModeracao",
+                            Tipo = c.Submissao.Tipo,
+                            AlvoId = c.Submissao.AlvoId,
+                            Placeholder = "Responder ao autor…",
+                            TituloVazio = "Nenhuma mensagem ainda.",
+                        })" />
+
+                        <div class="pj-inbox__detail-foot">
+                            <a href="/Itens/@c.Submissao.ItemSlug" target="_blank">Ver item →</a>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="pj-inbox__placeholder">Selecione uma conversa na lista.</div>
+                }
             </div>
-        </div>
-    }
+        }
+    </div>
 </div>
 
-<h2 class="gbr-h4">Referências (@Model.ReferenciasPendentes.Count)</h2>
-@if (Model.ReferenciasPendentes.Count == 0)
-{
-    <p class="gbr-muted">Nenhuma referência pendente.</p>
+@section Scripts {
+    <script src="~/js/moderacao-editor.js" asp-append-version="true"></script>
+    <script src="~/js/projeta-chat.js" asp-append-version="true"></script>
+    <script src="~/js/moderacao-rejeitar.js" asp-append-version="true"></script>
 }
-<div class="gbr-stack" style="margin-bottom:var(--gbr-space-8);">
-    @foreach (var referencia in Model.ReferenciasPendentes)
-    {
-        <div class="gbr-card gbr-moderacao-item">
-            <div class="gbr-row" style="justify-content:space-between;">
-                <div>
-                    <span class="gbr-eyebrow">Mandamento @referencia.Item!.Mandamento!.Id — @referencia.Item.Titulo</span>
-                    <h3 class="gbr-h4" style="margin-top:var(--gbr-space-1);"><a href="@referencia.Url" target="_blank" rel="noopener noreferrer">@referencia.Titulo</a></h3>
-                    <span class="gbr-tag">@referencia.Tipo</span>
-                </div>
-                <span class="gbr-badge">@referencia.DataCriacao.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
-            </div>
-
-            <p class="gbr-muted" style="margin:var(--gbr-space-2) 0;">
-                Enviada por <strong>@(referencia.Usuario?.NomeCompleto ?? "Usuário removido")</strong>
-            </p>
-
-            <div class="gbr-row" style="justify-content:flex-end;margin-top:var(--gbr-space-2);">
-                <form method="post" asp-page-handler="AprovarReferencia" asp-route-id="@referencia.Id">
-                    <button type="submit" class="gbr-btn gbr-btn--secondary">Aprovar</button>
-                </form>
-
-                <details class="gbr-moderacao-rejeitar">
-                    <summary class="gbr-btn gbr-btn--danger">Rejeitar</summary>
-                    <form method="post" asp-page-handler="RejeitarReferencia" class="gbr-stack gbr-moderacao-rejeitar__form">
-                        <input type="hidden" name="RejeitarReferencia.AlvoId" value="@referencia.Id" />
-                        <textarea name="RejeitarReferencia.Motivo" class="gbr-textarea" rows="2" placeholder="Explique por que a referência não foi aceita..." required></textarea>
-                        <button type="submit" class="gbr-btn gbr-btn--danger gbr-btn--sm">Confirmar rejeição</button>
-                    </form>
-                </details>
-            </div>
-        </div>
-    }
-</div>
-
-<h2 class="gbr-h4">Documentos (@Model.DocumentosPendentes.Count)</h2>
-@if (Model.DocumentosPendentes.Count == 0)
-{
-    <p class="gbr-muted">Nenhum documento pendente.</p>
-}
-<div class="gbr-stack">
-    @foreach (var documento in Model.DocumentosPendentes)
-    {
-        <div class="gbr-card gbr-moderacao-item">
-            <div class="gbr-row" style="justify-content:space-between;">
-                <div>
-                    <span class="gbr-eyebrow">Mandamento @documento.Item!.Mandamento!.Id — @documento.Item.Titulo</span>
-                    <h3 class="gbr-h4" style="margin-top:var(--gbr-space-1);">
-                        <a asp-page="/Itens/Index" asp-page-handler="Baixar" asp-route-slug="@documento.Item.Slug" asp-route-id="@documento.Id">@documento.NomeOriginal</a>
-                    </h3>
-                    <span class="gbr-tag">@((documento.TamanhoBytes / 1024.0).ToString("0")) KB · @documento.ContentType</span>
-                </div>
-                <span class="gbr-badge">@documento.DataUpload.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
-            </div>
-
-            <p class="gbr-muted" style="margin:var(--gbr-space-2) 0;">
-                Enviado por <strong>@(documento.Usuario?.NomeCompleto ?? "Usuário removido")</strong>
-            </p>
-
-            <div class="gbr-row" style="justify-content:flex-end;margin-top:var(--gbr-space-2);">
-                <form method="post" asp-page-handler="AprovarDocumento" asp-route-id="@documento.Id">
-                    <button type="submit" class="gbr-btn gbr-btn--secondary">Aprovar</button>
-                </form>
-
-                <details class="gbr-moderacao-rejeitar">
-                    <summary class="gbr-btn gbr-btn--danger">Rejeitar</summary>
-                    <form method="post" asp-page-handler="RejeitarDocumento" class="gbr-stack gbr-moderacao-rejeitar__form">
-                        <input type="hidden" name="RejeitarDocumento.AlvoId" value="@documento.Id" />
-                        <textarea name="RejeitarDocumento.Motivo" class="gbr-textarea" rows="2" placeholder="Explique por que o documento não foi aceito..." required></textarea>
-                        <button type="submit" class="gbr-btn gbr-btn--danger gbr-btn--sm">Confirmar rejeição</button>
-                    </form>
-                </details>
-            </div>
-        </div>
-    }
-</div>
-
-<h2 class="gbr-h4">Novos itens propostos (@Model.ItensPropostos.Count)</h2>
-@if (Model.ItensPropostos.Count == 0)
-{
-    <p class="gbr-muted">Nenhum item proposto pendente.</p>
-}
-<div class="gbr-stack">
-    @foreach (var item in Model.ItensPropostos)
-    {
-        <div class="gbr-card gbr-moderacao-item">
-            <div class="gbr-row" style="justify-content:space-between;">
-                <div>
-                    <span class="gbr-eyebrow">Mandamento @item.Mandamento!.Id — @item.Mandamento.Secular</span>
-                    <h3 class="gbr-h4" style="margin-top:var(--gbr-space-1);">@item.Titulo</h3>
-                </div>
-                <span class="gbr-badge">@item.DataCriacao.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
-            </div>
-
-            <p class="gbr-muted" style="margin:var(--gbr-space-2) 0 var(--gbr-space-4);">
-                Proposto por <strong>@(item.CriadoPorUsuario?.NomeCompleto ?? "Usuário removido")</strong>
-            </p>
-
-            <div class="gbr-moderacao-diff">@Html.Raw(Model.Render(item.Corpo))</div>
-
-            <div class="gbr-row" style="justify-content:flex-end;margin-top:var(--gbr-space-4);">
-                <a href="/Itens/@item.Slug" target="_blank" class="gbr-btn gbr-btn--outline">Ver página completa</a>
-                <form method="post" asp-page-handler="AprovarItem" asp-route-id="@item.Id">
-                    <button type="submit" class="gbr-btn gbr-btn--secondary">Aprovar</button>
-                </form>
-
-                <details class="gbr-moderacao-rejeitar">
-                    <summary class="gbr-btn gbr-btn--danger">Rejeitar</summary>
-                    <form method="post" asp-page-handler="RejeitarItem" class="gbr-stack gbr-moderacao-rejeitar__form">
-                        <input type="hidden" name="RejeitarItem.AlvoId" value="@item.Id" />
-                        <textarea name="RejeitarItem.Motivo" class="gbr-textarea" rows="2" placeholder="Explique por que o item não foi aceito..." required></textarea>
-                        <button type="submit" class="gbr-btn gbr-btn--danger gbr-btn--sm">Confirmar rejeição</button>
-                    </form>
-                </details>
-            </div>
-        </div>
-    }
-</div>

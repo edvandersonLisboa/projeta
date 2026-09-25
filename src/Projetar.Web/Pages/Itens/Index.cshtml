@@ -1,157 +1,375 @@
 @page "{slug}"
+@using System.Globalization
+@using Projetar.Web.Models
+@using Projetar.Web.Services
 @model Projetar.Web.Pages.Itens.IndexModel
 @{
-    ViewData["Title"] = $"{Model.ItemAtual.Titulo} — Mandamento {Model.ItemAtual.Mandamento!.Id}";
+    Layout = "_LayoutPj";
+    var ptBr = CultureInfo.GetCultureInfo("pt-BR");
+    var mandamento = Model.ItemAtual.Mandamento!;
+    var primeiroAutor = Model.Participantes.FirstOrDefault();
+    var urlAtual = $"{ViewContext.HttpContext.Request.Scheme}://{ViewContext.HttpContext.Request.Host}{ViewContext.HttpContext.Request.Path}";
+    var citacaoTexto = $"{mandamento.Secular} Projeta — Decálogo Cívico Brasileiro, princípio {mandamento.Id}. Disponível em: {urlAtual}. Acesso em {DateTime.Now.ToString("d MMM'.' yyyy", ptBr)}.";
+
+    ViewData["Title"] = $"{Model.ItemAtual.Titulo} — Princípio {mandamento.Id}";
+    ViewData["NavAtivo"] = "Propostas";
+    ViewData["TopbarContexto"] = $"Princípio {mandamento.Id} de 10";
 }
 
-@if (Model.ItemAtual.Status == Projetar.Web.Models.ItemStatus.PropostaComunidade)
+@* ---------- Breadcrumb ---------- *@
+<div class="pj-shell pj-breadcrumb">
+    <a href="/">Início</a>
+    <span class="sep">/</span>
+    <a href="/">Propostas</a>
+    <span class="sep">/</span>
+    <span class="current">@mandamento.Secular</span>
+</div>
+
+@if (Model.ItemAtual.Status == ItemStatus.PropostaComunidade)
 {
-    <div class="gbr-alert gbr-alert--info gbr-item-status-banner" role="status">
-        <div>
-            <p class="gbr-alert__title">Este item é uma proposta em análise</p>
-            <p class="gbr-alert__body">Só você (o autor) e os revisores conseguem ver esta página. Ela só aparece na listagem do mandamento depois de aprovada.</p>
+    <div class="pj-shell" style="padding-top:18px;">
+        <div class="pj-alert pj-alert--info">
+            <strong>Este item é uma proposta em análise</strong>
+            Só você (o autor) e os revisores conseguem ver esta página. Ela só aparece na listagem do princípio depois de aprovada.
         </div>
     </div>
 }
-else if (Model.ItemAtual.Status == Projetar.Web.Models.ItemStatus.Arquivado)
+else if (Model.ItemAtual.Status == ItemStatus.Arquivado)
 {
-    <div class="gbr-alert gbr-alert--danger gbr-item-status-banner" role="status">
-        <div>
-            <p class="gbr-alert__title">Este item proposto não foi aprovado</p>
-            <p class="gbr-alert__body">Motivo: @(Model.ItemAtual.MotivoRejeicao ?? "não informado")</p>
+    <div class="pj-shell" style="padding-top:18px;">
+        <div class="pj-alert pj-alert--danger">
+            <strong>Este item proposto não foi aprovado</strong>
+            Motivo: @(Model.ItemAtual.MotivoRejeicao ?? "não informado")
         </div>
     </div>
 }
 
 @if (Model.MinhaRevisaoPendenteOuRejeitada is { } minhaRevisao)
 {
-    @if (minhaRevisao.Status == Projetar.Web.Models.RevisaoStatus.Pendente)
-    {
-        <div class="gbr-alert gbr-alert--info gbr-item-status-banner" role="status">
-            <div>
-                <p class="gbr-alert__title">Sua edição está em análise</p>
-                <p class="gbr-alert__body">Um revisor ou administrador ainda vai avaliar sua proposta. O texto abaixo é o oficial atual, sem a sua mudança.</p>
+    <div class="pj-shell" style="padding-top:18px;">
+        @if (minhaRevisao.Status == RevisaoStatus.Pendente)
+        {
+            <div class="pj-alert pj-alert--info">
+                <strong>Sua edição está em análise</strong>
+                Um revisor ou administrador ainda vai avaliar sua proposta. O texto abaixo é o oficial atual, sem a sua mudança.
             </div>
-        </div>
-    }
-    else
-    {
-        <div class="gbr-alert gbr-alert--danger gbr-item-status-banner" role="status">
-            <div>
-                <p class="gbr-alert__title">Sua edição não foi aprovada</p>
-                <p class="gbr-alert__body">Motivo: @(minhaRevisao.MotivoRejeicao ?? "não informado")</p>
+        }
+        else
+        {
+            <div class="pj-alert pj-alert--danger">
+                <strong>Sua edição não foi aprovada</strong>
+                Motivo: @(minhaRevisao.MotivoRejeicao ?? "não informado")
             </div>
-        </div>
-    }
+        }
+    </div>
 }
 
-<div class="gbr-item-layout">
-    <div class="gbr-item-layout__main">
-        <article class="gbr-card gbr-item">
-            <div class="gbr-flag-strip gbr-item__strip"><span></span><span></span><span></span></div>
-            <div class="gbr-item__numeral" aria-hidden="true">@Model.ItemAtual.Mandamento!.Id</div>
-
-            <header class="gbr-item__header">
-                <span class="gbr-eyebrow">"@Model.ItemAtual.Mandamento!.Biblical"</span>
-                <h1 class="gbr-h2">@Model.ItemAtual.Mandamento!.Secular</h1>
-            </header>
-
-            <hr class="gbr-divider" />
-
-            <div class="gbr-item__body">
-                <h2 class="gbr-h4">@Model.ItemAtual.Titulo</h2>
-                @Html.Raw(Model.CorpoHtml)
+@if (Model.MeuConviteModeracaoPendente is { } convite)
+{
+    <div class="pj-shell" style="padding-top:18px;">
+        <div class="pj-alert pj-alert--info">
+            <strong>Você foi convidado(a) para moderar este item</strong>
+            @(convite.AdicionadoPorUsuario?.NomeCompleto ?? "Alguém") te convidou para ser moderador(a) de "@Model.ItemAtual.Titulo". Aceite para passar a revisar propostas deste item, ou recuse se não for pra você.
+            <div class="gbr-row" style="gap:8px;margin-top:12px;">
+                <form method="post" asp-page-handler="AceitarConviteModeracao">
+                    <input type="hidden" name="escopoId" value="@convite.Id" />
+                    <button type="submit" class="pj-btn pj-btn--green pj-btn--sm">Aceitar convite</button>
+                </form>
+                <form method="post" asp-page-handler="RecusarConviteModeracao">
+                    <input type="hidden" name="escopoId" value="@convite.Id" />
+                    <button type="submit" class="pj-btn pj-btn--outline-navy pj-btn--sm">Recusar</button>
+                </form>
             </div>
+        </div>
+    </div>
+}
 
-            <hr class="gbr-divider" />
-            <p class="gbr-item__signature">— Projeto Brasil, Decálogo da Nação</p>
-            <p class="gbr-item__footnote gbr-muted">Mandamento @Model.ItemAtual.Mandamento!.Id de 10</p>
+@* ---------- Cabeçalho do artigo ---------- *@
+<div class="pj-shell" style="padding:18px 28px 0;">
+    <header class="pj-card pj-article-head">
+        <span class="pj-chip-green">Princípio @mandamento.Id</span>
+        <h1>@mandamento.Secular</h1>
+        <p class="sub">@Model.ItemAtual.Titulo</p>
 
-            @if (Model.Participantes.Count > 0)
+        <div class="pj-article-meta">
+            <span class="strong">Princípio @mandamento.Id</span>
+            <span>&middot;</span>
+            <span>@Model.ItemAtual.DataCriacao.ToLocalTime().ToString("d 'de' MMMM 'de' yyyy", ptBr)</span>
+            @if (primeiroAutor is not null)
             {
-                <p class="gbr-item__footnote gbr-muted">
-                    Quem participou:
-                    @for (var i = 0; i < Model.Participantes.Count; i++)
-                    {
-                        <span class="gbr-tag">@Model.Participantes[i].NomeCompleto@(i == 0 && Model.Participantes.Count > 1 ? " (autor original)" : "")</span>
-                    }
-                </p>
+                <span>&middot;</span>
+                <span>Por @primeiroAutor.NomeCompleto</span>
+            }
+        </div>
+
+        <div class="pj-share">
+            <span class="label">Compartilhar:</span>
+            <a target="_blank" rel="noopener noreferrer" aria-label="Compartilhar no Facebook"
+               href="https://www.facebook.com/sharer/sharer.php?u=@Uri.EscapeDataString(urlAtual)">f</a>
+            <a target="_blank" rel="noopener noreferrer" aria-label="Compartilhar no X"
+               href="https://twitter.com/intent/tweet?url=@Uri.EscapeDataString(urlAtual)&text=@Uri.EscapeDataString(Model.ItemAtual.Titulo)">x</a>
+            <a target="_blank" rel="noopener noreferrer" aria-label="Compartilhar no LinkedIn"
+               href="https://www.linkedin.com/sharing/share-offsite/?url=@Uri.EscapeDataString(urlAtual)">in</a>
+            <a target="_blank" rel="noopener noreferrer" aria-label="Compartilhar no WhatsApp"
+               href="https://wa.me/?text=@Uri.EscapeDataString(Model.ItemAtual.Titulo + " " + urlAtual)">w</a>
+            <a href="#" data-copy-link="@urlAtual" data-copy-label="Link copiado!" aria-label="Copiar link" onclick="return false;">&#8599;</a>
+        </div>
+    </header>
+</div>
+
+@* ---------- Corpo + sidebar ---------- *@
+<div class="pj-shell pj-layout">
+
+    <div class="pj-col">
+        <article class="pj-card" style="overflow:hidden;">
+            @if (!string.IsNullOrWhiteSpace(Model.ItemAtual.BannerImagem))
+            {
+                <img class="pj-banner" src="@Model.ItemAtual.BannerImagem" alt="" />
             }
 
-            @if (Model.HistoricoAprovado.Count > 0)
-            {
-                <hr class="gbr-divider" />
-                <details class="gbr-historico-votos">
-                    <summary class="gbr-btn gbr-btn--ghost gbr-btn--sm">Ver histórico de redações (@Model.HistoricoAprovado.Count)</summary>
-                    <ul class="gbr-material-list" style="margin-top:var(--gbr-space-3);">
-                        @foreach (var revisao in Model.HistoricoAprovado)
-                        {
-                            <li class="gbr-material-list__item gbr-historico-votos__item">
-                                <div class="gbr-row" style="justify-content:space-between;width:100%;">
-                                    <span class="gbr-comentario__autor">@(revisao.AutorUsuario?.NomeCompleto ?? "Usuário removido")</span>
-                                    <span class="gbr-comentario__data">@revisao.DataRevisao.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
+            <div class="pj-prose">
+                @Html.Raw(Model.CorpoHtml)
+
+                <div class="pj-attribution">— Projeta, Decálogo Cívico Brasileiro</div>
+
+                @if (Model.HistoricoAprovado.Count > 0)
+                {
+                    <details style="margin-top:20px;">
+                        <summary style="cursor:pointer; list-style:none; font-size:13px; font-weight:500; color:var(--pj-green-dark);">
+                            Ver histórico de redações (@Model.HistoricoAprovado.Count)
+                        </summary>
+                        <div style="margin-top:14px; display:flex; flex-direction:column; gap:14px;">
+                            @foreach (var revisao in Model.HistoricoAprovado)
+                            {
+                                <div style="border-top:1px solid var(--pj-border-soft); padding-top:12px;">
+                                    <div style="display:flex; justify-content:space-between; font-size:12.5px; color:var(--pj-muted-light);">
+                                        <span style="color:var(--pj-navy); font-weight:500;">@(revisao.AutorUsuario?.NomeCompleto ?? "Usuário removido")</span>
+                                        <span>@revisao.DataRevisao.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
+                                    </div>
+                                    @if (!string.IsNullOrWhiteSpace(revisao.ComentarioDaMudanca))
+                                    {
+                                        <p style="font-size:13px; color:var(--pj-muted); margin:6px 0 0;">"@revisao.ComentarioDaMudanca"</p>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(revisao.ComentarioDaModeracao))
+                                    {
+                                        <p style="font-size:12.5px; color:var(--pj-green-dark); margin:6px 0 0;">
+                                            <b>Ajuste do revisor</b> @(revisao.RevisadoPorUsuario?.NomeCompleto is { } nomeRevisor ? $"({nomeRevisor})" : "")
+                                            — "@revisao.ComentarioDaModeracao"
+                                        </p>
+                                    }
+                                    <details style="margin-top:8px;">
+                                        <summary style="cursor:pointer; list-style:none; font-size:12.5px; color:var(--pj-muted-light);">Ver o que mudou</summary>
+                                        <div class="pj-note" style="background:var(--pj-paper); border-radius:8px; padding:12px 14px; margin-top:8px;">@Html.Raw(Model.Redline(revisao))</div>
+                                    </details>
                                 </div>
-                                @if (!string.IsNullOrWhiteSpace(revisao.ComentarioDaMudanca))
-                                {
-                                    <p class="gbr-muted" style="margin:var(--gbr-space-1) 0 0;">"@revisao.ComentarioDaMudanca"</p>
-                                }
-                                <details style="margin-top:var(--gbr-space-2);">
-                                    <summary class="gbr-btn gbr-btn--outline gbr-btn--sm">Ver o que mudou</summary>
-                                    <div class="gbr-moderacao-redline" style="margin-top:var(--gbr-space-2);">@Html.Raw(Model.Redline(revisao))</div>
-                                </details>
-                            </li>
-                        }
-                    </ul>
-                </details>
-            }
+                            }
+                        </div>
+                    </details>
+                }
+            </div>
         </article>
 
-        <div class="gbr-item__back gbr-row" style="justify-content:center;">
-            <a href="/" class="gbr-btn gbr-btn--outline">&larr; Voltar ao Decálogo</a>
-            @if (Model.PodeParticipar)
-            {
-                <a href="/Itens/@Model.ItemAtual.Slug/Editar" class="gbr-btn gbr-btn--primary">Propor edição</a>
+        <div class="pj-card pj-card--pad">
+            <div class="pj-card__title">Autoria</div>
+            <div class="pj-meta-list">
+                <div><b>Redação:</b> @(primeiroAutor?.NomeCompleto ?? "Redação")</div>
+                <div><b>Código do princípio:</b> @mandamento.Id de 10</div>
+                <div><b>Seção:</b> Decálogo Cívico Brasileiro</div>
+            </div>
+        </div>
+
+        <div class="pj-card pj-card--pad" id="contribuicoes">
+            <div class="pj-card__title">Quem construiu esta proposta</div>
+            @{
+                var totalContribAprovadas = Model.Contribuidores.Sum(c => c.Total);
             }
-            else if (User.Identity?.IsAuthenticated == true)
+            <p class="pj-contrib__sub">
+                @Model.Contribuidores.Count pessoa@(Model.Contribuidores.Count == 1 ? "" : "s") &middot;
+                @totalContribAprovadas contribuiç@(totalContribAprovadas == 1 ? "ão" : "ões") aprovada@(totalContribAprovadas == 1 ? "" : "s") &middot;
+                clique em um nome para ver o que foi aprovado
+            </p>
+
+            @if (Model.Contribuidores.Count > 0)
             {
-                <a asp-page="/Conta/CompletarPerfil" class="gbr-btn gbr-btn--ghost">Complete seu perfil para editar</a>
+                <div class="pj-segmented pj-contrib__tabs">
+                    <a href="?ordemContrib=contribuicoes#contribuicoes" class="@(Model.OrdemContrib == "contribuicoes" ? "is-active" : "")">Mais contribuições</a>
+                    <a href="?ordemContrib=recentes#contribuicoes" class="@(Model.OrdemContrib == "recentes" ? "is-active" : "")">Mais recentes</a>
+                </div>
+
+                <div class="pj-contrib__grid">
+                    @foreach (var c in Model.Contribuidores)
+                    {
+                        <button type="button" class="pj-contrib__row" onclick="document.getElementById('modalContrib-@c.Usuario.Id').showModal()">
+                            <span class="pj-avatar" style="background:@AvatarUtils.Color(c.Usuario.NomeCompleto)">@AvatarUtils.Initials(c.Usuario.NomeCompleto)</span>
+                            <span class="txt">
+                                <span class="name">
+                                    @c.Usuario.NomeCompleto
+                                    @if (c.EhAutor)
+                                    {
+                                        <span class="pj-tag pj-tag--mod">AUTOR</span>
+                                    }
+                                </span>
+                                <span class="meta">@c.Total contribuiç@(c.Total == 1 ? "ão" : "ões") &middot; última em @c.UltimaEm.ToLocalTime().ToString("dd/MM")</span>
+                            </span>
+                            <span class="arrow">&rarr;</span>
+                        </button>
+                    }
+                </div>
+
+                @foreach (var c in Model.Contribuidores)
+                {
+                    <dialog id="modalContrib-@c.Usuario.Id" class="pj-dialog">
+                        <div class="pj-dialog__head">
+                            <span class="pj-dialog__title">@c.Usuario.NomeCompleto &mdash; contribuições aprovadas</span>
+                            <button type="button" class="pj-dialog__close" onclick="document.getElementById('modalContrib-@c.Usuario.Id').close()" aria-label="Fechar">&times;</button>
+                        </div>
+                        <div class="pj-contrib__lista">
+                            @foreach (var contrib in c.Contribuicoes.OrderByDescending(x => x.Data))
+                            {
+                                <div class="pj-contrib__item">
+                                    <span class="pj-type @contrib.Tipo.ClasseTipo()">@contrib.Tipo.Rotulo()</span>
+                                    <span class="resumo">@contrib.Resumo</span>
+                                    <span class="data">@contrib.Data.ToLocalTime().ToString("dd/MM/yyyy")</span>
+                                </div>
+                            }
+                        </div>
+                    </dialog>
+                }
             }
             else
             {
-                <a asp-page="/Conta/Entrar" class="gbr-btn gbr-btn--ghost">Entrar para propor edição</a>
+                <p class="pj-note">Nenhuma contribuição aprovada ainda.</p>
+            }
+        </div>
+
+        <div class="pj-card pj-card--pad">
+            <div class="pj-card__title">Como citar este conteúdo</div>
+            <p class="pj-note">
+                @mandamento.Secular <b>Projeta — Decálogo Cívico Brasileiro</b>, princípio @mandamento.Id.
+                Disponível em: <i>@urlAtual</i>.
+                Acesso em @DateTime.Now.ToString("d MMM'.' yyyy", ptBr).
+            </p>
+            <div class="pj-share">
+                <span class="label">Compartilhar citação:</span>
+                <a href="#" data-copy-link="@citacaoTexto" data-copy-label="Citação copiada!" onclick="return false;" aria-label="Copiar citação">&#8599;</a>
+                <a target="_blank" rel="noopener noreferrer" aria-label="Compartilhar citação no WhatsApp"
+                   href="https://wa.me/?text=@Uri.EscapeDataString(citacaoTexto)">w</a>
+                <a target="_blank" rel="noopener noreferrer" aria-label="Compartilhar citação no X"
+                   href="https://twitter.com/intent/tweet?text=@Uri.EscapeDataString(citacaoTexto)">x</a>
+                <a target="_blank" rel="noopener noreferrer" aria-label="Compartilhar citação por e-mail"
+                   href="mailto:?subject=@Uri.EscapeDataString($"Citação — {Model.ItemAtual.Titulo}")&body=@Uri.EscapeDataString(citacaoTexto)">@@</a>
+            </div>
+        </div>
+
+        <div class="pj-card pj-card--pad">
+            <div class="pj-card__title">Importante</div>
+            <p class="pj-note">
+                As ideias publicadas na Projeta são propostas de cidadãos, abertas a revisão pela
+                comunidade. Não representam posição de partido, órgão público ou instituição.
+                As manifestações destinam-se ao debate público sobre a mudança das leis brasileiras.
+            </p>
+        </div>
+
+        @if (Model.ItemAtual.TagsLista.Count > 0 || Model.TagsPendentes.Count > 0 || Model.PodeParticipar)
+        {
+            <div class="pj-tags" id="tags">
+                @foreach (var tag in Model.ItemAtual.TagsLista)
+                {
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <span class="pj-pill pj-pill--tag pj-pill--tag-removable">
+                            <a href="/Busca?q=@Uri.EscapeDataString(tag)">@tag</a>
+                            <form method="post" asp-page-handler="RemoverTag" asp-route-slug="@Model.ItemAtual.Slug" style="display:contents;">
+                                <input type="hidden" name="tag" value="@tag" />
+                                <button type="submit" class="pj-tag-remove" aria-label="Remover tag @tag" title="Remover tag">&times;</button>
+                            </form>
+                        </span>
+                    }
+                    else
+                    {
+                        <a href="/Busca?q=@Uri.EscapeDataString(tag)" class="pj-pill pj-pill--tag">@tag</a>
+                    }
+                }
+                @foreach (var pendente in Model.TagsPendentes)
+                {
+                    <span class="pj-pill pj-pill--tag-pendente" title="Sugerida por @(pendente.Usuario?.NomeCompleto ?? "alguém") — aguardando aprovação">@pendente.Nome (em análise)</span>
+                }
+                @if (Model.PodeParticipar)
+                {
+                    <button type="button" class="pj-pill pj-pill--add" onclick="document.getElementById('modalTags').showModal()">+ Sugerir tag</button>
+                }
+            </div>
+        }
+
+        @if (Model.PodeParticipar)
+        {
+            <dialog id="modalTags" class="pj-dialog">
+                <div class="pj-dialog__head">
+                    <span class="pj-dialog__title">Sugerir tag</span>
+                    <button type="button" class="pj-dialog__close" onclick="document.getElementById('modalTags').close()" aria-label="Fechar">&times;</button>
+                </div>
+                <p class="pj-dialog__hint" style="margin-bottom:14px;">A tag entra no item só depois que um revisor aprovar.</p>
+
+                @if (Model.TagsDisponiveis.Count > 0)
+                {
+                    <p class="pj-dialog__hint">Tags já usadas em outros itens — clique para sugerir:</p>
+                    <div class="pj-dialog__existing">
+                        @foreach (var tagExistente in Model.TagsDisponiveis)
+                        {
+                            <form method="post" asp-page-handler="SugerirTag" asp-route-slug="@Model.ItemAtual.Slug" style="display:contents;">
+                                <input type="hidden" name="tag" value="@tagExistente" />
+                                <button type="submit" class="pj-pill pj-pill--tag">@tagExistente</button>
+                            </form>
+                        }
+                    </div>
+                }
+
+                <p class="pj-dialog__hint">Ou sugira uma nova:</p>
+                <form method="post" asp-page-handler="SugerirTag" asp-route-slug="@Model.ItemAtual.Slug" class="pj-dialog__new">
+                    <input name="tag" placeholder="Nome da nova tag" required maxlength="40" />
+                    <button type="submit" class="pj-btn pj-btn--green pj-btn--sm">Sugerir</button>
+                </form>
+            </dialog>
+        }
+
+        <div class="pj-pager">
+            <a href="/" class="pj-btn pj-btn--outline-navy">&larr; Voltar às Propostas</a>
+            @if (Model.ProximoPrincipioUrl is not null)
+            {
+                <a href="@Model.ProximoPrincipioUrl" class="pj-btn pj-btn--green">Princípio @Model.ProximoPrincipio!.Id &rarr;</a>
             }
         </div>
 
         @if (Model.RevisoesPendentesDoItem.Count > 0 && (Model.PodeParticipar || Model.UsuarioAtualEhModerador))
         {
-            <section class="gbr-card gbr-debate-card" id="debate">
-                <h2 class="gbr-h4">Propostas de edição em debate (@Model.RevisoesPendentesDoItem.Count)</h2>
-                <p class="gbr-muted" style="margin-bottom:var(--gbr-space-4);">
+            <section class="pj-card pj-card--pad" id="debate">
+                <div class="pj-card__title">Propostas de edição em debate (@Model.RevisoesPendentesDoItem.Count)</div>
+                <p class="pj-note" style="margin-bottom:16px;">
                     Edições enviadas por participantes e ainda não avaliadas por um revisor. Apoie a que você concorda em vez de propor uma parecida.
                 </p>
 
                 @if (TempData["MensagemErroDebate"] is string erroDebate)
                 {
-                    <div class="gbr-alert gbr-alert--danger" role="alert"><div class="gbr-alert__body">@erroDebate</div></div>
+                    <div class="pj-alert pj-alert--danger">@erroDebate</div>
                 }
 
-                <div class="gbr-stack">
+                <div style="display:flex; flex-direction:column; gap:16px;">
                     @foreach (var revisao in Model.RevisoesPendentesDoItem)
                     {
-                        <div class="gbr-card gbr-moderacao-item">
-                            <div class="gbr-row" style="justify-content:space-between;">
-                                <span class="gbr-comentario__autor">@(revisao.AutorUsuario?.NomeCompleto ?? "Usuário removido")</span>
-                                <span class="gbr-comentario__data">@revisao.DataRevisao.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
+                        <div style="border:1px solid var(--pj-border-soft); border-radius:10px; padding:16px 18px;">
+                            <div style="display:flex; justify-content:space-between; font-size:12.5px;">
+                                <span style="color:var(--pj-navy); font-weight:500;">@(revisao.AutorUsuario?.NomeCompleto ?? "Usuário removido")</span>
+                                <span style="color:var(--pj-muted-pale);">@revisao.DataRevisao.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
                             </div>
                             @if (!string.IsNullOrWhiteSpace(revisao.ComentarioDaMudanca))
                             {
-                                <p class="gbr-muted" style="margin:var(--gbr-space-1) 0 var(--gbr-space-2);">"@revisao.ComentarioDaMudanca"</p>
+                                <p style="font-size:13px; color:var(--pj-muted); margin:6px 0 10px;">"@revisao.ComentarioDaMudanca"</p>
                             }
 
-                            <div class="gbr-moderacao-redline">@Html.Raw(Model.Redline(revisao))</div>
+                            <div class="pj-note" style="background:var(--pj-paper); border-radius:8px; padding:12px 14px;">@Html.Raw(Model.Redline(revisao))</div>
 
-                            <div class="gbr-row" style="justify-content:space-between;align-items:center;margin-top:var(--gbr-space-3);">
-                                <span class="gbr-muted" style="font-size:var(--gbr-fs-xs);">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px;">
+                                <span style="font-size:12px; color:var(--pj-muted-pale);">
                                     @(revisao.Apoios.Count) apoio@(revisao.Apoios.Count == 1 ? "" : "s")
                                     @if (revisao.Apoios.Count > 0)
                                     {
@@ -164,13 +382,13 @@ else if (Model.ItemAtual.Status == Projetar.Web.Models.ItemStatus.Arquivado)
                                     if (Model.JaApoiei(revisao))
                                     {
                                         <form method="post" asp-page-handler="RemoverApoio" asp-route-slug="@Model.ItemAtual.Slug" asp-route-revisaoId="@revisao.Id">
-                                            <button type="submit" class="gbr-btn gbr-btn--outline gbr-btn--sm">Remover apoio</button>
+                                            <button type="submit" class="pj-btn pj-btn--outline-navy pj-btn--sm">Remover apoio</button>
                                         </form>
                                     }
                                     else
                                     {
                                         <form method="post" asp-page-handler="Apoiar" asp-route-slug="@Model.ItemAtual.Slug" asp-route-revisaoId="@revisao.Id">
-                                            <button type="submit" class="gbr-btn gbr-btn--secondary gbr-btn--sm">Apoiar</button>
+                                            <button type="submit" class="pj-btn pj-btn--green pj-btn--sm">Apoiar</button>
                                         </form>
                                     }
                                 }
@@ -180,222 +398,364 @@ else if (Model.ItemAtual.Status == Projetar.Web.Models.ItemStatus.Arquivado)
                 </div>
             </section>
         }
+
+        <section class="pj-card pj-comments" id="comentarios">
+            <h2>Comentários (@Model.Comentarios.Count(c => !c.Removido || c.Respostas.Any(r => !r.Removido)))</h2>
+
+            @if (Model.PodeParticipar)
+            {
+                <form method="post" asp-page-handler="Comentario">
+                    <textarea rows="4" name="NovoComentario.Texto" placeholder="Escreva um comentário..." required></textarea>
+                    <div class="pj-comments__actions">
+                        <button type="submit" class="pj-btn pj-btn--navy">Comentar</button>
+                    </div>
+                </form>
+            }
+            else if (User.Identity?.IsAuthenticated == true)
+            {
+                <p class="pj-note"><a asp-page="/Conta/CompletarPerfil">Complete seu perfil</a> para comentar.</p>
+            }
+            else
+            {
+                <p class="pj-note"><a asp-page="/Conta/Entrar">Entre</a> para comentar.</p>
+            }
+
+            @{
+                ViewData["Slug"] = Model.ItemAtual.Slug;
+                ViewData["UsuarioAtualId"] = Model.UsuarioAtualId;
+                ViewData["EhModerador"] = Model.UsuarioAtualEhModerador;
+                ViewData["PodeParticipar"] = Model.PodeParticipar;
+            }
+            @foreach (var comentario in Model.Comentarios)
+            {
+                <partial name="_Comentario" model="comentario" />
+            }
+        </section>
     </div>
 
-    <aside class="gbr-item-layout__sidebar">
-        <section class="gbr-card gbr-avaliacao-card" id="avaliacao">
-            <h2 class="gbr-h4">Qual a importância dessa lei?</h2>
+    @* ---------- Sidebar ---------- *@
+    <aside class="pj-col pj-col--side">
 
-            <div class="gbr-stack">
-                <div>
-                    @if (Model.MediaEstrelas is { } media)
-                    {
-                        <span class="gbr-rating__display" aria-hidden="true">@Html.Raw(new string('★', (int)Math.Round(media)) + new string('☆', 5 - (int)Math.Round(media)))</span>
-                        <span class="gbr-muted">@media.ToString("0.0") de 5 (@Model.TotalVotos avaliação@(Model.TotalVotos == 1 ? "" : "ões"))</span>
-                    }
-                    else
-                    {
-                        <span class="gbr-muted">Ainda sem avaliações.</span>
-                    }
+        <div class="pj-card pj-rate">
+            <div class="pj-rate__title">Qual a importância dessa lei?</div>
+
+            @if (Model.MediaEstrelas is { } media)
+            {
+                <div class="pj-rate__score">
+                    <span class="pj-stars pj-stars--lg">
+                        @Html.Raw(new string('★', (int)Math.Round(media)))<span class="pj-stars__empty">@Html.Raw(new string('★', 5 - (int)Math.Round(media)))</span>
+                    </span>
+                    <span class="note">@media.ToString("0.0", ptBr) de 5 (@Model.TotalVotos avaliação@(Model.TotalVotos == 1 ? "" : "ões"))</span>
                 </div>
-
-                @if (Model.PodeParticipar)
-                {
-                    <form method="post" asp-page-handler="Avaliar" class="gbr-stack gbr-rating">
-                        <fieldset class="gbr-rating__stars">
-                            <legend class="gbr-visually-hidden">Sua avaliação</legend>
-                            @for (var i = 5; i >= 1; i--)
-                            {
-                                <input type="radio" id="estrela@(i)" name="estrelas" value="@i" @(Model.MinhaAvaliacao == i ? "checked" : "") />
-                                <label for="estrela@(i)" title="@i estrela(s)">★</label>
-                            }
-                        </fieldset>
-                        <div class="gbr-field">
-                            <label class="gbr-label" for="observacao">Por que essa nota? (opcional)</label>
-                            <textarea class="gbr-textarea" id="observacao" name="observacao" rows="2" maxlength="1000" placeholder="Conte o motivo da sua avaliação...">@Model.MinhaObservacao</textarea>
-                        </div>
-                        <button type="submit" class="gbr-btn gbr-btn--sm gbr-btn--primary">Enviar avaliação</button>
-                    </form>
-                }
-                else if (User.Identity?.IsAuthenticated == true)
-                {
-                    <a asp-page="/Conta/CompletarPerfil" class="gbr-help">Complete seu perfil para avaliar</a>
-                }
-                else
-                {
-                    <a asp-page="/Conta/Entrar" class="gbr-help">Entrar para avaliar</a>
-                }
-
-                @if (Model.TotalVotos > 0)
-                {
-                    <details class="gbr-historico-votos">
-                        <summary class="gbr-btn gbr-btn--ghost gbr-btn--sm">Ver mais — histórico de avaliações (@Model.TotalVotos)</summary>
-                        <ul class="gbr-material-list" style="margin-top:var(--gbr-space-3);">
-                            @foreach (var voto in Model.HistoricoVotos)
-                            {
-                                <li class="gbr-material-list__item gbr-historico-votos__item">
-                                    <div class="gbr-row" style="justify-content:space-between;width:100%;">
-                                        <span>
-                                            <span class="gbr-rating__display" aria-hidden="true" style="font-size:0.9rem;">@Html.Raw(new string('★', voto.Estrelas) + new string('☆', 5 - voto.Estrelas))</span>
-                                            <strong>@(voto.Usuario?.NomeCompleto ?? "Usuário removido")</strong>
-                                        </span>
-                                        <span class="gbr-muted" style="font-size:var(--gbr-fs-xs);">@voto.DataAtualizacao.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
-                                    </div>
-                                    @if (!string.IsNullOrWhiteSpace(voto.Observacao))
-                                    {
-                                        <p class="gbr-muted" style="margin:var(--gbr-space-1) 0 0;">"@voto.Observacao"</p>
-                                    }
-                                </li>
-                            }
-                        </ul>
-                    </details>
-                }
-            </div>
-        </section>
-
-        <section class="gbr-card gbr-material-card" id="material">
-            <h2 class="gbr-h4">Material de apoio</h2>
-            <p class="gbr-muted" style="margin-bottom:var(--gbr-space-4);">Links e documentos que fortalecem o argumento desta lei. Só aparecem para todos depois de aprovados por um revisor.</p>
-
-            @if (TempData["MensagemSucesso"] is string materialSucesso)
-            {
-                <div class="gbr-alert gbr-alert--success" role="status"><div class="gbr-alert__body">@materialSucesso</div></div>
             }
-
-            @if (Model.Referencias.Count == 0 && Model.Documentos.Count == 0)
+            else
             {
-                <p class="gbr-muted">Nenhuma referência ou documento enviado ainda.</p>
-            }
-
-            @if (Model.Referencias.Count > 0)
-            {
-                <ul class="gbr-material-list">
-                    @foreach (var referencia in Model.Referencias)
-                    {
-                        <li class="gbr-material-list__item">
-                            <a href="@referencia.Url" target="_blank" rel="noopener noreferrer">@referencia.Titulo</a>
-                            <span class="gbr-tag">@referencia.Tipo</span>
-                            <span class="gbr-muted gbr-material-list__autor">— @(referencia.Usuario?.NomeCompleto ?? "Usuário removido")</span>
-                            @if (referencia.Status == Projetar.Web.Models.RevisaoStatus.Pendente)
-                            {
-                                <span class="gbr-badge gbr-badge--warning">Em análise</span>
-                            }
-                            else if (referencia.Status == Projetar.Web.Models.RevisaoStatus.Rejeitada)
-                            {
-                                <span class="gbr-badge gbr-badge--danger" title="@referencia.MotivoRejeicao">Rejeitada</span>
-                            }
-                        </li>
-                    }
-                </ul>
-            }
-
-            @if (Model.Documentos.Count > 0)
-            {
-                <ul class="gbr-material-list">
-                    @foreach (var documento in Model.Documentos)
-                    {
-                        <li class="gbr-material-list__item">
-                            <a asp-page-handler="Baixar" asp-route-slug="@Model.ItemAtual.Slug" asp-route-id="@documento.Id">@documento.NomeOriginal</a>
-                            <span class="gbr-tag">@((documento.TamanhoBytes / 1024.0).ToString("0")) KB</span>
-                            <span class="gbr-muted gbr-material-list__autor">— @(documento.Usuario?.NomeCompleto ?? "Usuário removido")</span>
-                            @if (documento.Status == Projetar.Web.Models.RevisaoStatus.Pendente)
-                            {
-                                <span class="gbr-badge gbr-badge--warning">Em análise</span>
-                            }
-                            else if (documento.Status == Projetar.Web.Models.RevisaoStatus.Rejeitada)
-                            {
-                                <span class="gbr-badge gbr-badge--danger" title="@documento.MotivoRejeicao">Rejeitado</span>
-                            }
-                        </li>
-                    }
-                </ul>
+                <p class="pj-note" style="margin-bottom:16px;">Ainda sem avaliações.</p>
             }
 
             @if (Model.PodeParticipar)
             {
-                <div class="gbr-stack gbr-material-forms">
-                    <details class="gbr-material-forms__item">
-                        <summary class="gbr-btn gbr-btn--outline gbr-btn--sm">Adicionar referência (link)</summary>
-                        <form method="post" asp-page-handler="Referencia" class="gbr-stack">
-                            <div class="gbr-field">
-                                <label class="gbr-label" asp-for="NovaReferencia.Titulo"></label>
-                                <input class="gbr-input" asp-for="NovaReferencia.Titulo" />
-                                <span class="gbr-help gbr-help--error" asp-validation-for="NovaReferencia.Titulo"></span>
+                <form method="post" asp-page-handler="Avaliar">
+                    <div class="pj-rate__input">
+                        @for (var i = 5; i >= 1; i--)
+                        {
+                            <input type="radio" id="estrela@(i)" name="estrelas" value="@i" @(Model.MinhaAvaliacao == i ? "checked" : "") />
+                            <label for="estrela@(i)" title="@i estrela(s)">★</label>
+                        }
+                    </div>
+                    <label for="observacao">Por que essa nota? (opcional)</label>
+                    <textarea id="observacao" name="observacao" rows="3" maxlength="1000" placeholder="Conte o motivo da sua avaliação...">@Model.MinhaObservacao</textarea>
+                    <button type="submit" class="pj-btn pj-btn--green pj-btn--block">Enviar avaliação</button>
+                </form>
+            }
+            else if (User.Identity?.IsAuthenticated == true)
+            {
+                <a asp-page="/Conta/CompletarPerfil" class="pj-note">Complete seu perfil para avaliar</a>
+            }
+            else
+            {
+                <a asp-page="/Conta/Entrar" class="pj-note">Entrar para avaliar</a>
+            }
+
+            @if (Model.TotalVotos > 0)
+            {
+                <details>
+                    <summary style="cursor:pointer; list-style:none; text-align:center; margin-top:14px; font-size:12px; font-weight:500; color:var(--pj-green-dark);">
+                        Ver histórico de avaliações (@Model.TotalVotos)
+                    </summary>
+                    <div style="margin-top:14px; display:flex; flex-direction:column; gap:12px;">
+                        @foreach (var voto in Model.HistoricoVotos)
+                        {
+                            <div style="border-top:1px solid var(--pj-border-soft); padding-top:10px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center;">
+                                    <span>
+                                        <span class="pj-stars" style="margin-right:6px;">@Html.Raw(new string('★', voto.Estrelas))<span class="pj-stars__empty">@Html.Raw(new string('★', 5 - voto.Estrelas))</span></span>
+                                        <b style="font-size:12.5px; color:var(--pj-navy);">@(voto.Usuario?.NomeCompleto ?? "Usuário removido")</b>
+                                    </span>
+                                    <span style="font-size:11px; color:var(--pj-muted-pale);">@voto.DataAtualizacao.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
+                                </div>
+                                @if (!string.IsNullOrWhiteSpace(voto.Observacao))
+                                {
+                                    <p style="font-size:12.5px; color:var(--pj-muted); margin:4px 0 0;">"@voto.Observacao"</p>
+                                }
                             </div>
-                            <div class="gbr-field">
-                                <label class="gbr-label" asp-for="NovaReferencia.Url">URL</label>
-                                <input class="gbr-input" asp-for="NovaReferencia.Url" placeholder="https://" />
-                                <span class="gbr-help gbr-help--error" asp-validation-for="NovaReferencia.Url"></span>
+                        }
+                    </div>
+                </details>
+            }
+        </div>
+
+        <div class="pj-card pj-side-card">
+            <div class="pj-side-card__title">Material de apoio</div>
+            <p>
+                Links e documentos que fortalecem o argumento desta lei.
+                Só aparecem para todos depois de aprovados por um revisor.
+            </p>
+
+            @if (Model.Referencias.Count == 0 && Model.Documentos.Count == 0)
+            {
+                <div class="empty">Nenhuma referência ou documento enviado ainda.</div>
+            }
+            else
+            {
+                <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:16px;">
+                    @foreach (var referencia in Model.Referencias)
+                    {
+                        <a href="@referencia.Url" target="_blank" rel="noopener noreferrer" style="display:block; border:1px solid var(--pj-border-soft); border-radius:8px; padding:10px 12px;">
+                            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:4px;">
+                                <span class="pj-pill pj-pill--tag" style="font-size:10.5px; padding:3px 10px;">@referencia.Tipo.Rotulo()</span>
+                                @if (referencia.Status == RevisaoStatus.Pendente)
+                                {
+                                    <span class="pj-flag">Em análise</span>
+                                }
+                                else if (referencia.Status == RevisaoStatus.Rejeitada)
+                                {
+                                    <span class="pj-flag" title="@referencia.MotivoRejeicao">Rejeitada</span>
+                                }
                             </div>
-                            <div class="gbr-field">
-                                <label class="gbr-label" asp-for="NovaReferencia.Tipo"></label>
-                                <select class="gbr-select" asp-for="NovaReferencia.Tipo" asp-items="Html.GetEnumSelectList<Projetar.Web.Models.ReferenciaTipo>()"></select>
+                            <div style="font-size:13px; color:var(--pj-navy); font-weight:500;">@referencia.Titulo</div>
+                            <div style="font-size:11.5px; color:var(--pj-muted-pale); margin-top:2px;">@(referencia.Usuario?.NomeCompleto ?? "Usuário removido")</div>
+                        </a>
+                    }
+                    @foreach (var documento in Model.Documentos)
+                    {
+                        <a asp-page-handler="Baixar" asp-route-slug="@Model.ItemAtual.Slug" asp-route-id="@documento.Id" style="display:block; border:1px solid var(--pj-border-soft); border-radius:8px; padding:10px 12px;">
+                            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:4px;">
+                                <span class="pj-pill pj-pill--tag" style="font-size:10.5px; padding:3px 10px;">@((documento.TamanhoBytes / 1024.0).ToString("0")) KB</span>
+                                @if (documento.Status == RevisaoStatus.Pendente)
+                                {
+                                    <span class="pj-flag">Em análise</span>
+                                }
+                                else if (documento.Status == RevisaoStatus.Rejeitada)
+                                {
+                                    <span class="pj-flag" title="@documento.MotivoRejeicao">Rejeitado</span>
+                                }
                             </div>
-                            <button type="submit" class="gbr-btn gbr-btn--primary gbr-btn--sm">Enviar referência</button>
+                            <div style="font-size:13px; color:var(--pj-navy); font-weight:500;">@documento.NomeOriginal</div>
+                            <div style="font-size:11.5px; color:var(--pj-muted-pale); margin-top:2px;">@(documento.Usuario?.NomeCompleto ?? "Usuário removido")</div>
+                        </a>
+                    }
+                </div>
+            }
+
+            @if (Model.PodeParticipar)
+            {
+                <div class="pj-side-card__actions">
+                    <details>
+                        <summary class="primary" style="cursor:pointer; list-style:none; display:block;">Adicionar referência (link)</summary>
+                        <form method="post" asp-page-handler="Referencia" style="margin-top:12px; display:flex; flex-direction:column; gap:10px;">
+                            <div>
+                                <label style="font-size:12px; color:var(--pj-muted); display:block; margin-bottom:4px;" asp-for="NovaReferencia.Titulo"></label>
+                                <input asp-for="NovaReferencia.Titulo" placeholder="Título" style="border:1px solid var(--pj-border); border-radius:6px; padding:9px 11px; font-size:12.5px; width:100%;" />
+                                <span class="pj-note" style="color:#B23A3A;" asp-validation-for="NovaReferencia.Titulo"></span>
+                            </div>
+                            <div>
+                                <label style="font-size:12px; color:var(--pj-muted); display:block; margin-bottom:4px;">URL</label>
+                                <input asp-for="NovaReferencia.Url" placeholder="https://" style="border:1px solid var(--pj-border); border-radius:6px; padding:9px 11px; font-size:12.5px; width:100%;" />
+                                <span class="pj-note" style="color:#B23A3A;" asp-validation-for="NovaReferencia.Url"></span>
+                            </div>
+                            <div>
+                                <label style="font-size:12px; color:var(--pj-muted); display:block; margin-bottom:4px;" asp-for="NovaReferencia.Tipo"></label>
+                                <select asp-for="NovaReferencia.Tipo" asp-items="Html.GetEnumSelectList<ReferenciaTipo>()" style="border:1px solid var(--pj-border); border-radius:6px; padding:9px 11px; font-size:12.5px; width:100%;"></select>
+                            </div>
+                            <button type="submit" class="pj-btn pj-btn--green pj-btn--sm">Enviar referência</button>
                         </form>
                     </details>
 
-                    <details class="gbr-material-forms__item">
-                        <summary class="gbr-btn gbr-btn--outline gbr-btn--sm">Enviar documento (arquivo)</summary>
-                        <form method="post" asp-page-handler="Documento" enctype="multipart/form-data" class="gbr-stack">
-                            <div class="gbr-field">
-                                <label class="gbr-label" for="NovoArquivo">Arquivo (PDF, Word, imagem ou TXT — máx. 10 MB)</label>
-                                <input class="gbr-input" type="file" id="NovoArquivo" name="NovoArquivo" />
-                            </div>
-                            <button type="submit" class="gbr-btn gbr-btn--primary gbr-btn--sm">Enviar documento</button>
+                    <details>
+                        <summary class="secondary" style="cursor:pointer; list-style:none; display:block;">Enviar documento (arquivo)</summary>
+                        <form method="post" asp-page-handler="Documento" enctype="multipart/form-data" style="margin-top:12px; display:flex; flex-direction:column; gap:10px;">
+                            <label style="font-size:12px; color:var(--pj-muted);">Arquivo (PDF, Word, imagem ou TXT — máx. 10 MB)</label>
+                            <input type="file" name="NovoArquivo" style="font-size:12px;" />
+                            <button type="submit" class="pj-btn pj-btn--green pj-btn--sm">Enviar documento</button>
                         </form>
                     </details>
                 </div>
             }
             else if (User.Identity?.IsAuthenticated == true)
             {
-                <p class="gbr-muted"><a asp-page="/Conta/CompletarPerfil">Complete seu perfil</a> para enviar material de apoio.</p>
+                <p class="empty"><a asp-page="/Conta/CompletarPerfil">Complete seu perfil</a> para enviar material de apoio.</p>
             }
             else
             {
-                <p class="gbr-muted"><a asp-page="/Conta/Entrar">Entre</a> para enviar material de apoio.</p>
+                <p class="empty"><a asp-page="/Conta/Entrar">Entre</a> para enviar material de apoio.</p>
             }
-        </section>
+        </div>
+
+        @if (Model.OutrosPrincipios.Count > 0)
+        {
+            <div class="pj-card" style="overflow:hidden;">
+                <div class="pj-list-card__head">
+                    <span>Propostas</span>
+                    <a href="/">Ver todos</a>
+                </div>
+                @foreach (var principio in Model.OutrosPrincipios)
+                {
+                    <a href="@(principio.PrimeiroItemSlug is { } ps ? $"/Itens/{ps}" : "/")" class="pj-list-card__item">
+                        <div class="t">@principio.Mandamento.Secular</div>
+                        <div class="n">PRINCÍPIO @principio.Mandamento.Id</div>
+                    </a>
+                }
+            </div>
+        }
+
+        <div class="pj-promo">
+            <h3>Propor ideia</h3>
+            <p>Publique sua proposta de mudança na lei e amplie o alcance da sua ideia na Projeta.</p>
+            @if (Model.PodeParticipar)
+            {
+                <a href="/Mandamentos/@Model.ItemAtual.MandamentoId/Propor" class="pj-btn pj-btn--gold pj-btn--block">Enviar minha ideia</a>
+            }
+            else if (User.Identity?.IsAuthenticated == true)
+            {
+                <a asp-page="/Conta/CompletarPerfil" class="pj-btn pj-btn--gold pj-btn--block">Complete seu perfil</a>
+            }
+            else
+            {
+                <a asp-page="/Conta/Entrar" class="pj-btn pj-btn--gold pj-btn--block">Entrar para propor</a>
+            }
+        </div>
+
+        <div class="pj-card pj-side-card">
+            <div class="pj-side-card__title">Melhorar esta ideia</div>
+            <p>Viu como deixar este princípio mais claro ou mais forte? Envie sua sugestão de redação.</p>
+            @if (Model.PodeParticipar)
+            {
+                <a href="/Itens/@Model.ItemAtual.Slug/Editar" class="pj-pill" style="border:1px solid var(--pj-green); color:var(--pj-green-dark); padding:8px 20px; font-size:12.5px; font-weight:500;">
+                    Sugerir redação
+                </a>
+            }
+            else if (User.Identity?.IsAuthenticated == true)
+            {
+                <a asp-page="/Conta/CompletarPerfil" class="pj-pill" style="border:1px solid var(--pj-border); color:var(--pj-navy); padding:8px 20px; font-size:12.5px;">Complete seu perfil</a>
+            }
+            else
+            {
+                <a asp-page="/Conta/Entrar" class="pj-pill" style="border:1px solid var(--pj-border); color:var(--pj-navy); padding:8px 20px; font-size:12.5px;">Entrar para sugerir</a>
+            }
+
+            @if (User.IsInRole("Admin"))
+            {
+                <div class="pj-admin-box">
+                    <div class="pj-admin-box__title">Administração</div>
+                    <a href="/Itens/@Model.ItemAtual.Slug/Editar#banner" class="pj-pill" style="border:1px solid var(--pj-border); color:var(--pj-navy); padding:8px 20px; font-size:12.5px;">Editar banner</a>
+                    @if (Model.BannerPendente is not null)
+                    {
+                        <p class="pj-note" style="margin-top:8px;">Há um banner em análise aguardando moderação.</p>
+                    }
+                </div>
+            }
+
+            @if (Model.UsuarioAtualEhModerador)
+            {
+                <div class="pj-admin-box" id="moderadores">
+                    <div class="pj-admin-box__title">Moderadores deste item</div>
+
+                    @if (TempData["MensagemErroModeradores"] is string erroModeradores)
+                    {
+                        <p class="pj-note" style="color:#B4322A;margin-bottom:8px;">@erroModeradores</p>
+                    }
+
+                    <ul style="list-style:none;padding:0;margin:0 0 12px;display:flex;flex-direction:column;gap:6px;">
+                        @foreach (var escopo in Model.ModeradoresDoItem)
+                        {
+                            var ehCriador = escopo.TipoEscopo == TipoEscopoModeracao.Item &&
+                                escopo.Status == StatusEscopoModeracao.Aceito &&
+                                escopo.UsuarioId == Model.ItemAtual.CriadoPorUsuarioId;
+                            <li style="display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12.5px;color:var(--pj-navy);">
+                                <span>
+                                    @(escopo.Usuario?.NomeCompleto ?? "Usuário removido")
+                                    @if (escopo.TipoEscopo == TipoEscopoModeracao.Mandamento)
+                                    {
+                                        <span class="pj-note" style="display:inline;">— princípio inteiro</span>
+                                    }
+                                    @if (ehCriador)
+                                    {
+                                        <span class="pj-note" style="display:inline;">— criador do item</span>
+                                    }
+                                    @if (escopo.Status == StatusEscopoModeracao.Pendente)
+                                    {
+                                        <span class="gbr-badge gbr-badge--warning" style="margin-left:6px;">Convite pendente</span>
+                                    }
+                                </span>
+                                @if (escopo.TipoEscopo == TipoEscopoModeracao.Item && !ehCriador)
+                                {
+                                    <form method="post" asp-page-handler="RemoverModerador">
+                                        <input type="hidden" name="escopoId" value="@escopo.Id" />
+                                        <button type="submit" class="pj-link-btn">@(escopo.Status == StatusEscopoModeracao.Pendente ? "cancelar convite" : "remover")</button>
+                                    </form>
+                                }
+                            </li>
+                        }
+                    </ul>
+
+                    <form method="post" asp-page-handler="AdicionarModerador" class="gbr-row" style="gap:6px;">
+                        <input type="email" name="NovoModeradorEmail" class="gbr-input" style="flex:1;min-width:0;" placeholder="E-mail do novo moderador" required />
+                        <button type="submit" class="pj-btn pj-btn--outline-navy" style="padding:8px 16px;font-size:12.5px;">Convidar</button>
+                    </form>
+                </div>
+            }
+        </div>
     </aside>
 </div>
 
-<section class="gbr-card gbr-comentarios-card" id="comentarios">
-    <h2 class="gbr-h4">Comentários (@Model.Comentarios.Count(c => !c.Removido || c.Respostas.Any(r => !r.Removido)))</h2>
-
-    @if (Model.PodeParticipar)
-    {
-        <form method="post" asp-page-handler="Comentario" class="gbr-stack" style="margin-bottom:var(--gbr-space-6);">
-            <div class="gbr-field">
-                <textarea name="NovoComentario.Texto" class="gbr-textarea" rows="3" placeholder="Escreva um comentário..." required></textarea>
+@* ---------- Veja também ---------- *@
+@if (Model.VejaTambem.Count > 0)
+{
+    <section class="pj-shell pj-related">
+        <div class="pj-section__head">
+            <div>
+                <span class="pj-eyebrow">Leitura complementar</span>
+                <h2 class="pj-h2">Veja também</h2>
             </div>
-            <div class="gbr-row" style="justify-content:flex-end;">
-                <button type="submit" class="gbr-btn gbr-btn--primary gbr-btn--sm">Comentar</button>
-            </div>
-        </form>
-    }
-    else if (User.Identity?.IsAuthenticated == true)
-    {
-        <p class="gbr-muted"><a asp-page="/Conta/CompletarPerfil">Complete seu perfil</a> para comentar.</p>
-    }
-    else
-    {
-        <p class="gbr-muted"><a asp-page="/Conta/Entrar">Entre</a> para comentar.</p>
-    }
+            <a asp-page="/Ideias" class="pj-pill" style="border:1px solid var(--pj-navy); color:var(--pj-navy); padding:8px 20px; font-size:12.5px;">
+                Mais desta seção
+            </a>
+        </div>
 
-    @{
-        ViewData["Slug"] = Model.ItemAtual.Slug;
-        ViewData["UsuarioAtualId"] = Model.UsuarioAtualId;
-        ViewData["EhModerador"] = Model.UsuarioAtualEhModerador;
-        ViewData["PodeParticipar"] = Model.PodeParticipar;
-    }
-    <div class="gbr-stack">
-        @foreach (var comentario in Model.Comentarios)
-        {
-            <partial name="_Comentario" model="comentario" />
-        }
-    </div>
-</section>
+        <div class="pj-related__grid">
+            @foreach (var relacionado in Model.VejaTambem)
+            {
+                <partial name="_ItemCardPj" model="relacionado" />
+            }
+        </div>
+    </section>
+}
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.querySelectorAll('[data-copy-link]').forEach(function (el) {
+            el.addEventListener('click', function () {
+                var link = this.getAttribute('data-copy-link');
+                var rotulo = this.getAttribute('data-copy-label') || 'Copiado!';
+                navigator.clipboard?.writeText(link).then(() => {
+                    var original = this.textContent;
+                    this.textContent = '✓';
+                    setTimeout(() => { this.textContent = original; }, 1500);
+                    window.pjSnackbar && window.pjSnackbar(rotulo, 'success');
+                });
+            });
+        });
+    </script>
 }
