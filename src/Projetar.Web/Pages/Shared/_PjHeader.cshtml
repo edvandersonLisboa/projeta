@@ -1,0 +1,136 @@
+@using System.Globalization
+@using Microsoft.EntityFrameworkCore
+@using Projetar.Web.Data
+@using Projetar.Web.Models
+@using Projetar.Web.Services
+@inject Microsoft.AspNetCore.Identity.SignInManager<ApplicationUser> SignInManager
+@inject Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> UserManager
+@inject ApplicationDbContext Db
+@{
+    // Cabeçalho único do site — mesma estrutura em toda página, igual à Home.
+    // Não varia por página: sempre o header claro (variant "light" do design original).
+    var navAtivo = ViewData["NavAtivo"] as string ?? "Início";
+    var hoje = DateTime.Now.ToString("dddd, d 'de' MMMM 'de' yyyy", CultureInfo.GetCultureInfo("pt-BR"));
+
+    var navItems = new (string Label, string Href)[]
+    {
+        ("Início", "/"),
+        ("Propostas", "/"),
+        ("Ideias", "/Ideias"),
+        ("Sobre", "/Sobre"),
+    };
+
+    List<Notificacao> notifRecentes = [];
+    var totalNaoLidas = 0;
+    if (SignInManager.IsSignedIn(User))
+    {
+        var usuarioLogadoId = UserManager.GetUserId(User);
+        totalNaoLidas = await Db.Notificacoes.CountAsync(n => n.UsuarioDestinoId == usuarioLogadoId && !n.Lida);
+        notifRecentes = await Db.Notificacoes
+            .Where(n => n.UsuarioDestinoId == usuarioLogadoId && !n.Lida)
+            .OrderByDescending(n => n.DataCriacao)
+            .Take(5)
+            .AsNoTracking()
+            .ToListAsync();
+    }
+}
+<div class="pj-utility">
+    @hoje &nbsp;&middot;&nbsp; Decálogo Cívico Brasileiro
+    @if (ViewData["TopbarContexto"] is string topbarContexto)
+    {
+        <text>&nbsp;&middot;&nbsp; @topbarContexto</text>
+    }
+</div>
+
+<header class="pj-header">
+    <div class="pj-shell pj-header__inner">
+        <a href="/" class="pj-logo">
+            <img src="/img/simbolo.svg" alt="Projeta" />
+            <span class="pj-logo__word">PROJETA</span>
+        </a>
+        <form class="pj-search" method="get" action="/Busca" role="search">
+            <input type="search" name="q" placeholder="Pesquisar princípios, ideias e propostas de lei..." value="@(ViewData["BuscaQuery"] as string)" />
+            <button type="submit" class="pj-btn pj-btn--green pj-btn--search">Pesquisar</button>
+        </form>
+    </div>
+</header>
+
+<nav class="pj-nav">
+    <div class="pj-shell pj-nav__inner">
+        <div class="pj-nav__links">
+            @foreach (var item in navItems)
+            {
+                <a href="@item.Href" class="@(item.Label == navAtivo ? "active" : null)">@item.Label</a>
+            }
+            @if (User.IsInRole("Admin") || User.IsInRole("Revisor"))
+            {
+                <a href="/Moderacao/Index" class="@(navAtivo == "Moderação" ? "active" : null)">Moderação</a>
+            }
+        </div>
+        <div class="pj-nav__actions">
+            @if (User.IsInRole("Admin"))
+            {
+                <a href="/Mandamentos/Gerenciar">Seções</a>
+                <a href="/Admin/Permissoes">Permissões</a>
+            }
+            @if (SignInManager.IsSignedIn(User))
+            {
+                var usuarioAtual = await UserManager.GetUserAsync(User);
+
+                <div class="pj-notif" data-notif>
+                    <button type="button" class="pj-notif__sino" data-notif-toggle aria-haspopup="true" aria-expanded="false" title="Notificações">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                        </svg>
+                        <span class="pj-notif__badge" data-notif-badge@(totalNaoLidas > 0 ? "" : " hidden")>@(totalNaoLidas > 99 ? "99+" : totalNaoLidas.ToString())</span>
+                    </button>
+                    <div class="pj-notif__dropdown" data-notif-dropdown>
+                        <div class="pj-notif__dropdown-head">
+                            <span>Notificações</span>
+                            <span class="count" data-notif-count-label>@totalNaoLidas não lida@(totalNaoLidas == 1 ? "" : "s")</span>
+                        </div>
+                        <div class="pj-notif__lista" data-notif-lista>
+                            @if (notifRecentes.Count == 0)
+                            {
+                                <div class="pj-notif__vazio">Nenhuma notificação nova.</div>
+                            }
+                            else
+                            {
+                                @foreach (var n in notifRecentes)
+                                {
+                                    <a class="pj-notif__item" href="/Notificacoes?handler=Abrir&amp;id=@n.Id">
+                                        <span class="pj-notif__icone @n.Tipo.ClasseIcone()"></span>
+                                        <span class="pj-notif__item-body">
+                                            <span class="pj-notif__item-titulo">@n.Titulo</span>
+                                            <span class="pj-notif__item-msg">@n.Mensagem</span>
+                                            <span class="pj-notif__item-tempo">@TempoRelativo.Formatar(n.DataCriacao)</span>
+                                        </span>
+                                    </a>
+                                }
+                            }
+                        </div>
+                        <a href="/Notificacoes" class="pj-notif__vermais">Ver mais</a>
+                    </div>
+                </div>
+
+                @if (usuarioAtual is not null && !usuarioAtual.PerfilCompleto)
+                {
+                    <a href="/Conta/CompletarPerfil">Completar perfil</a>
+                }
+                <a href="/Historico/Index">Meu Histórico</a>
+                <span>@(usuarioAtual?.Nome ?? "Você")</span>
+                <form method="post" asp-area="" asp-page="/Conta/Sair">
+                    <button type="submit" class="pj-link-like">Sair</button>
+                </form>
+            }
+            else
+            {
+                <a href="/Conta/Entrar" class="muted">Entrar</a>
+            }
+            <a href="/#principios" class="pj-pill pj-pill--gold">Propor ideia</a>
+        </div>
+    </div>
+</nav>
+
+<div class="pj-rule"><span></span><span></span><span></span></div>

@@ -1,0 +1,24 @@
+@page
+@model Projetar.Web.Pages.IdeiasModel
+@{
+    ViewData["Title"] = "Ideias";
+    ViewData["Breadcrumbs"] = new List<(string, string?)> { ("Início", "/"), ("Ideias", null) };
+}
+
+<span class="gbr-eyebrow">Todos os princípios</span>
+<h1 class="gbr-h2" style="margin-bottom:var(--gbr-space-2);">Ideias</h1>
+<p class="gbr-lead" style="margin-bottom:var(--gbr-space-8);">Todas as propostas de lei já publicadas no Projeta, das mais recentes às mais antigas.</p>
+
+@if (Model.Itens.Count == 0)
+{
+    <p class="gbr-muted">Nenhuma ideia publicada ainda.</p>
+}
+else
+{
+    <div class="gbr-itemcard-grid">
+        @foreach (var item in Model.Itens)
+        {
+            <partial name="_ItemCard" model="item" />
+        }
+    </div>
+}

@@ -15,6 +15,12 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<Voto> Votos => Set<Voto>();
     public DbSet<Documento> Documentos => Set<Documento>();
     public DbSet<Referencia> Referencias => Set<Referencia>();
+    public DbSet<TagSugestao> TagSugestoes => Set<TagSugestao>();
+    public DbSet<TagCatalogo> TagsCatalogo => Set<TagCatalogo>();
+    public DbSet<BannerSugestao> BannerSugestoes => Set<BannerSugestao>();
+    public DbSet<Notificacao> Notificacoes => Set<Notificacao>();
+    public DbSet<MensagemModeracao> MensagensModeracao => Set<MensagemModeracao>();
+    public DbSet<EscopoModeracao> EscoposModeracao => Set<EscopoModeracao>();
     public DbSet<EmailConfirmationCode> EmailConfirmationCodes => Set<EmailConfirmationCode>();
     public DbSet<PasswordResetCode> PasswordResetCodes => Set<PasswordResetCode>();
 
@@ -161,6 +167,96 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 .WithMany()
                 .HasForeignKey(r => r.RevisadoPorUsuarioId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<TagSugestao>(entity =>
+        {
+            entity.HasIndex(t => t.Status);
+            entity.HasOne(t => t.Item)
+                .WithMany()
+                .HasForeignKey(t => t.ItemId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(t => t.Usuario)
+                .WithMany()
+                .HasForeignKey(t => t.UsuarioId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(t => t.RevisadoPorUsuario)
+                .WithMany()
+                .HasForeignKey(t => t.RevisadoPorUsuarioId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<TagCatalogo>(entity =>
+        {
+            entity.HasIndex(t => t.Nome).IsUnique();
+        });
+
+        builder.Entity<BannerSugestao>(entity =>
+        {
+            entity.HasIndex(b => b.Status);
+            entity.HasOne(b => b.Item)
+                .WithMany()
+                .HasForeignKey(b => b.ItemId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(b => b.Usuario)
+                .WithMany()
+                .HasForeignKey(b => b.UsuarioId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(b => b.RevisadoPorUsuario)
+                .WithMany()
+                .HasForeignKey(b => b.RevisadoPorUsuarioId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<Notificacao>(entity =>
+        {
+            entity.HasIndex(n => new { n.UsuarioDestinoId, n.Lida });
+            entity.HasOne(n => n.UsuarioDestino)
+                .WithMany()
+                .HasForeignKey(n => n.UsuarioDestinoId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(n => n.UsuarioOrigem)
+                .WithMany()
+                .HasForeignKey(n => n.UsuarioOrigemId)
+                .OnDelete(DeleteBehavior.SetNull);
+            entity.HasOne(n => n.Item)
+                .WithMany()
+                .HasForeignKey(n => n.ItemId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        builder.Entity<MensagemModeracao>(entity =>
+        {
+            entity.HasIndex(m => new { m.TipoAlvo, m.AlvoId });
+            entity.HasOne(m => m.Item)
+                .WithMany()
+                .HasForeignKey(m => m.ItemId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(m => m.AutorUsuario)
+                .WithMany()
+                .HasForeignKey(m => m.AutorUsuarioId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<EscopoModeracao>(entity =>
+        {
+            entity.HasIndex(e => new { e.UsuarioId, e.TipoEscopo, e.MandamentoId, e.ItemId }).IsUnique();
+            entity.HasOne(e => e.Usuario)
+                .WithMany()
+                .HasForeignKey(e => e.UsuarioId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.AdicionadoPorUsuario)
+                .WithMany()
+                .HasForeignKey(e => e.AdicionadoPorUsuarioId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(e => e.Mandamento)
+                .WithMany()
+                .HasForeignKey(e => e.MandamentoId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Item)
+                .WithMany()
+                .HasForeignKey(e => e.ItemId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

@@ -32,6 +32,12 @@ public class ItemRevisao
     public ApplicationUser? RevisadoPorUsuario { get; set; }
     public DateTimeOffset? DataModeracao { get; set; }
 
+    /// <summary>Preenchido só quando o moderador ajusta o texto proposto antes de aprovar — null significa aprovado exatamente como veio.</summary>
+    public string? CorpoAprovado { get; set; }
+
+    /// <summary>Explica o que foi ajustado — obrigatório quando CorpoAprovado é preenchido.</summary>
+    public string? ComentarioDaModeracao { get; set; }
+
     /// <summary>Outros participantes que coassinaram esta proposta em vez de criar uma concorrente.</summary>
     public List<ItemRevisaoApoio> Apoios { get; set; } = [];
 }

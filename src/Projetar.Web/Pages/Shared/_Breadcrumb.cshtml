@@ -1,0 +1,24 @@
+@model List<(string Texto, string? Url)>
+
+<div class="gbr-breadcrumb-bar">
+    <div class="gbr-container">
+        <nav class="gbr-breadcrumb" aria-label="Você está em">
+            @for (var i = 0; i < Model.Count; i++)
+            {
+                var crumb = Model[i];
+                if (crumb.Url is { } url)
+                {
+                    <a href="@url">@crumb.Texto</a>
+                }
+                else
+                {
+                    <span aria-current="page">@crumb.Texto</span>
+                }
+                if (i < Model.Count - 1)
+                {
+                    <span class="gbr-breadcrumb__sep" aria-hidden="true">/</span>
+                }
+            }
+        </nav>
+    </div>
+</div>

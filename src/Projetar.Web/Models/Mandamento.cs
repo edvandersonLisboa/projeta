@@ -3,9 +3,15 @@ namespace Projetar.Web.Models;
 public class Mandamento
 {
     public int Id { get; set; }
-    public string Biblical { get; set; } = string.Empty;
+
+    /// <summary>Resumo curto (subtítulo) mostrado junto do título nos cards — sem referência religiosa.</summary>
+    public string Subtitulo { get; set; } = string.Empty;
+
     public string Secular { get; set; } = string.Empty;
+
+    /// <summary>Parágrafo de abertura do princípio — no máximo 500 caracteres.</summary>
     public string Intro { get; set; } = string.Empty;
+
     public int Ordem { get; set; }
 
     /// <summary>Quando falso, a seção só aparece para administradores — some da página inicial para o público.</summary>

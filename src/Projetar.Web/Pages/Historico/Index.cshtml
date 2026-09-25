@@ -1,0 +1,137 @@
+@page
+@model Projetar.Web.Pages.Historico.IndexModel
+@using Projetar.Web.Models
+@using Projetar.Web.Services
+@using Projetar.Web.Pages.Shared
+@{
+    ViewData["Title"] = "Meu Histórico";
+    ViewData["NavAtivo"] = "Propostas";
+
+    string StatusKey(string situacao) => situacao switch { "aprovado" => "ok", "rejeitado" => "rej", _ => "pend" };
+    string StatusLabel(string situacao) => situacao switch { "aprovado" => "Aprovada", "rejeitado" => "Rejeitada", _ => "Em análise" };
+    string QueryFiltro(string f) => Url.Page("/Historico/Index", new { filtro = f })!;
+
+    var selecionada = Model.Lista.FirstOrDefault(l => $"{l.Submissao.Tipo}-{l.Submissao.AlvoId}" == Model.Selecionado) ?? Model.Lista.FirstOrDefault();
+}
+
+<div class="pj-shell pj-breadcrumb">
+    <a href="/">Início</a><span class="sep">/</span><span class="current">Meu histórico</span>
+</div>
+
+<div class="pj-shell pj-hist-head">
+    <div class="intro">
+        <span class="pj-eyebrow">Sua conta</span>
+        <h1>Meu histórico</h1>
+        <p>Tudo que você propôs e em que pé está. Abra um item rejeitado para corrigir e reenviar, ou converse direto com quem avaliou.</p>
+    </div>
+    <div class="pj-hist-filters">
+        @foreach (var f in Projetar.Web.Pages.Historico.IndexModel.Filtros)
+        {
+            <a href="@QueryFiltro(f.Key)" class="@(Model.Filtro == f.Key ? "is-active" : "")">
+                @f.Label <span>@Model.ContagemPorFiltro.GetValueOrDefault(f.Key)</span>
+            </a>
+        }
+    </div>
+</div>
+
+<div class="pj-shell pj-hist-body">
+    <div class="pj-hist-list">
+        @foreach (var l in Model.Lista)
+        {
+            var chave = $"{l.Submissao.Tipo}-{l.Submissao.AlvoId}";
+            <a href="?filtro=@Model.Filtro&amp;sel=@chave" class="pj-hist-row @(selecionada?.Submissao.AlvoId == l.Submissao.AlvoId ? "is-active" : "")">
+                <span class="top">
+                    <span class="pj-status pj-status--@StatusKey(l.Submissao.Situacao)">@StatusLabel(l.Submissao.Situacao)</span>
+                    <span class="type">@l.Submissao.TipoRotulo</span>
+                    <span class="grow"></span>
+                    @if (l.HasUnread)
+                    {
+                        <span class="unread" title="Mensagem nova"></span>
+                    }
+                    <span class="when">@TempoRelativo.Formatar(l.Submissao.DataCriacao)</span>
+                </span>
+                <span class="title">@l.Submissao.Resumo</span>
+                <span class="ctx">@l.Submissao.ItemTitulo</span>
+                @if (l.Mensagens.Count > 0)
+                {
+                    <span class="msgs">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
+                        @(l.Mensagens.Count == 1 ? "1 mensagem" : $"{l.Mensagens.Count} mensagens")
+                    </span>
+                }
+            </a>
+        }
+        @if (Model.Lista.Count == 0)
+        {
+            <div class="pj-hist-empty">Nenhuma submissão com esse status.</div>
+        }
+    </div>
+
+    @if (selecionada is not null)
+    {
+        var s = selecionada.Submissao;
+        <div class="pj-hist-detail">
+            <div class="pj-hist-detail__head">
+                <div class="meta">
+                    <span class="pj-status pj-status--@StatusKey(s.Situacao)">@StatusLabel(s.Situacao)</span>
+                    <span>@s.TipoRotulo</span>
+                </div>
+                <h2>@s.Resumo</h2>
+                <p>@s.ItemTitulo</p>
+
+                <ol class="pj-timeline">
+                    <li class="done"><i></i><b>Enviada</b><small>@s.DataCriacao.ToLocalTime().ToString("dd/MM · HH:mm")</small></li>
+                    <li class="@(s.Situacao == "pendente" ? "current" : "done")"><i></i><b>Em análise</b><small>@(s.Situacao == "pendente" ? "agora" : "concluída")</small></li>
+                    <li class="end end--@StatusKey(s.Situacao)"><i></i><b>@(s.Situacao switch { "aprovado" => "Aprovada", "rejeitado" => "Rejeitada", _ => "Avaliação" })</b><small>@(s.DataModeracao is { } r ? r.ToLocalTime().ToString("dd/MM · HH:mm") : "aguardando")</small></li>
+                </ol>
+
+                @switch (s.Situacao)
+                {
+                    case "rejeitado":
+                        <div class="pj-hist-reason">
+                            <span>Motivo da rejeição</span>
+                            <p>@s.MotivoRejeicao</p>
+                        </div>
+                        <div class="pj-hist-actions">
+                            @if (!string.IsNullOrWhiteSpace(s.LinkAcao))
+                            {
+                                <a href="@s.LinkAcao" class="pj-btn pj-btn--navy pj-btn--sm">Corrigir e reenviar</a>
+                            }
+                            <a href="/Itens/@s.ItemSlug" class="pj-btn pj-btn--outline-soft pj-btn--sm">Ver item</a>
+                        </div>
+                        break;
+                    case "pendente":
+                        <div class="pj-hist-note pj-hist-note--pend">Em análise. Você recebe uma notificação quando um revisor avaliar.</div>
+                        break;
+                    default:
+                        <div class="pj-hist-note pj-hist-note--ok">Aprovado e publicado. Obrigado pela contribuição.</div>
+                        break;
+                }
+            </div>
+
+            <div class="pj-hist-chat-head">
+                <b>Conversa com a moderação</b>
+                <span>@(selecionada.Mensagens.Count == 0 ? "Sem mensagens" : selecionada.Mensagens.Count == 1 ? "1 mensagem" : $"{selecionada.Mensagens.Count} mensagens")</span>
+            </div>
+            <partial name="_ChatThread" model="@(new ChatThreadViewModel {
+                Mensagens = selecionada.Mensagens,
+                MeuUsuarioId = Model.MeuUsuarioId,
+                FormHandler = "Responder",
+                Tipo = s.Tipo,
+                AlvoId = s.AlvoId,
+                CamposExtras = new Dictionary<string, string> { ["filtro"] = Model.Filtro },
+                Placeholder = "Escreva uma mensagem para o moderador…",
+                TituloVazio = "Nenhuma mensagem ainda.",
+                DicaVazia = "Tem dúvida sobre a avaliação? Pergunte a quem revisou.",
+            })" />
+        </div>
+    }
+    else
+    {
+        <div class="pj-hist-placeholder">Selecione uma submissão para ver os detalhes e a conversa.</div>
+    }
+</div>
+
+@section Scripts {
+    <script src="~/js/projeta-chat.js" asp-append-version="true"></script>
+}

@@ -21,6 +21,20 @@ public class IndexModel(
 
     public string Excerpt(Item item) => content.ToExcerpt(item.Corpo);
 
+    public int TotalMedidas => MandamentosList.Sum(m => m.Itens.Count);
+    public int TotalAvaliadas => MandamentosList.Sum(m => m.Itens.Count(i => AvaliacoesPorItem.ContainsKey(i.Id)));
+
+    public string CountLabel(Mandamento m)
+    {
+        if (m.Itens.Count == 0)
+        {
+            return "Sem medidas";
+        }
+
+        var avaliadas = m.Itens.Count(i => AvaliacoesPorItem.ContainsKey(i.Id));
+        return $"{m.Itens.Count} medida{(m.Itens.Count == 1 ? "" : "s")} · {avaliadas} avaliada{(avaliadas == 1 ? "" : "s")}";
+    }
+
     public async Task OnGetAsync()
     {
         EhAdmin = User.IsInRole("Admin");

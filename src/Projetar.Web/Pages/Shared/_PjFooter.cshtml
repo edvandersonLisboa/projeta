@@ -1,0 +1,50 @@
+@* Rodapé único do site — mesma estrutura em toda página. *@
+<footer class="pj-footer">
+    <div class="pj-shell pj-footer__grid">
+        <div>
+            <div class="pj-footer__brand">
+                <img src="~/img/simbolo-mono-branco.svg" asp-append-version="true" alt="" />
+                <span>PROJETA</span>
+            </div>
+            <p class="pj-footer__about">
+                Plataforma colaborativa com uma coleção de ideias para mudar as leis brasileiras.
+                Todos podem participar, propor novas ideias e melhorar as existentes.
+            </p>
+        </div>
+
+        <div>
+            <div class="pj-footer__title">Institucional</div>
+            <div class="pj-footer__links">
+                <a href="/Sobre#quem-somos">Quem somos</a>
+                <a href="/Sobre#como-funciona">Como funciona</a>
+                <a href="/Moderacao/Index">Moderação</a>
+                <a href="/Privacy">Privacidade</a>
+            </div>
+        </div>
+
+        <div>
+            <div class="pj-footer__title">Participar</div>
+            <div class="pj-footer__links">
+                <a href="/#principios">Propor ideia</a>
+                <a href="/Sobre#como-funciona">Sugerir redação</a>
+                <a href="/Sobre#como-funciona">Enviar referência</a>
+                <a href="/Sobre#como-funciona">Ser revisor</a>
+            </div>
+        </div>
+
+        <div>
+            <div class="pj-footer__title">Seções</div>
+            <div class="pj-footer__links">
+                <a href="/">Propostas</a>
+                <a href="/Ideias">Ideias</a>
+                <a href="/Ideias">Em discussão</a>
+                <a href="/Ideias">Aprovadas</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="pj-footer__bottom">
+        <span>&copy; @DateTime.Now.Year Projeta &middot; Todos os direitos reservados</span>
+        <span>Sua voz ajuda a mudar o Brasil</span>
+    </div>
+</footer>

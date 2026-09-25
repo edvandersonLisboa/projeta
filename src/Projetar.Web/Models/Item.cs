@@ -15,6 +15,18 @@ public class Item
     /// <summary>Quando falso, o item só aparece para administradores — some da página inicial e do link direto para o público.</summary>
     public bool Visivel { get; set; } = true;
 
+    /// <summary>Caminho público (em wwwroot/uploads/banners) da imagem de banner exibida no topo da página do item. Null = banner padrão sem imagem. Só administradores podem definir.</summary>
+    public string? BannerImagem { get; set; }
+
+    /// <summary>Tags de assunto separadas por vírgula (ex: "Reforma eleitoral, Financiamento de campanha"), exibidas como pills na página do item. Só administradores podem definir.</summary>
+    public string? Tags { get; set; }
+
+    /// <summary>Lista de tags já sem espaços em branco e vazias — pronta para exibir.</summary>
+    public IReadOnlyList<string> TagsLista =>
+        string.IsNullOrWhiteSpace(Tags)
+            ? []
+            : Tags.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
     /// <summary>Null = conteúdo original vindo do seed, não criado por um usuário.</summary>
     public string? CriadoPorUsuarioId { get; set; }
     public ApplicationUser? CriadoPorUsuario { get; set; }

@@ -1,95 +1,61 @@
 @using Projetar.Web.Models
-@inject Microsoft.AspNetCore.Identity.SignInManager<ApplicationUser> SignInManager
-@inject Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> UserManager
 <!DOCTYPE html>
 <html lang="pt-br" data-theme="claro">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - 10 Mandamentos</title>
-    <link rel="icon" type="image/svg+xml" href="~/asserts/logo/simbolo.svg" asp-append-version="true" />
+    <title>@ViewData["Title"] - Projeta</title>
+    <link rel="icon" type="image/svg+xml" href="~/img/simbolo.svg" asp-append-version="true" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="stylesheet" href="~/css/govbr.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/mandamentos.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/projeta.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/projeta-extra.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/Projetar.Web.styles.css" asp-append-version="true" />
     <script src="~/js/govbr-theme.js"></script>
 </head>
+@{
+    // Cabeçalho e rodapé são os mesmos em toda página (partials _PjHeader/_PjFooter,
+    // igual à Home) — só o conteúdo de cada página continua no tema gbr por enquanto.
+    if (ViewData["NavAtivo"] is null)
+    {
+        var caminhoAtual = ViewContext.HttpContext.Request.Path.Value ?? "/";
+        ViewData["NavAtivo"] = caminhoAtual.StartsWith("/Sobre", StringComparison.OrdinalIgnoreCase) ? "Sobre"
+            : caminhoAtual.StartsWith("/Moderacao", StringComparison.OrdinalIgnoreCase) ? "Moderação"
+            : caminhoAtual.StartsWith("/Ideias", StringComparison.OrdinalIgnoreCase) ? "Ideias"
+            : "Início";
+    }
+
+    var _pjMsgSucesso = TempData["MensagemSucesso"] as string;
+    var _pjMsgErro = TempData["MensagemErro"] as string;
+}
 <body class="gbr">
-    <div class="gbr-flag-strip"><span></span><span></span><span></span></div>
+<div class="pj-app">
+    <partial name="_PjHeader" />
 
-    <header class="gbr-navbar">
-        <div class="gbr-container gbr-navbar__inner">
-            <a class="gbr-navbar__brand" asp-area="" asp-page="/Index">
-                <img src="~/asserts/logo/projeta-fundo-claro.svg" asp-append-version="true" alt="Projeta" class="gbr-navbar__logo gbr-navbar__logo--claro" />
-                <img src="~/asserts/logo/projeta-fundo-escuro.svg" asp-append-version="true" alt="Projeta" class="gbr-navbar__logo gbr-navbar__logo--escuro" />
-            </a>
-            <nav class="gbr-navbar__links" id="gbrNavLinks">
-                <a class="gbr-navlink" asp-area="" asp-page="/Index">Início</a>
-                <a class="gbr-navlink" asp-area="" asp-page="/Sobre">Sobre</a>
-                <a class="gbr-navlink" asp-area="" asp-page="/Privacy">Privacidade</a>
-                @if (User.IsInRole("Admin") || User.IsInRole("Revisor"))
-                {
-                    <a class="gbr-navlink" asp-area="" asp-page="/Moderacao/Index">Moderação</a>
-                }
-                @if (User.IsInRole("Admin"))
-                {
-                    <a class="gbr-navlink" href="/Mandamentos/Gerenciar">Seções</a>
-                }
-            </nav>
-            <div class="gbr-navbar__spacer"></div>
-
-            @if (SignInManager.IsSignedIn(User))
-            {
-                var usuarioAtual = await UserManager.GetUserAsync(User);
-                <div class="gbr-navbar__user">
-                    @if (usuarioAtual is not null && !usuarioAtual.PerfilCompleto)
-                    {
-                        <a class="gbr-badge gbr-badge--warning" asp-area="" asp-page="/Conta/CompletarPerfil">Completar perfil</a>
-                    }
-                    <span class="gbr-navbar__user-name">@(usuarioAtual?.Nome ?? "Você")</span>
-                    <form method="post" asp-area="" asp-page="/Conta/Sair" class="gbr-navbar__logout-form">
-                        <button type="submit" class="gbr-btn gbr-btn--ghost gbr-btn--sm">Sair</button>
-                    </form>
-                </div>
-            }
-            else
-            {
-                <a class="gbr-btn gbr-btn--outline gbr-btn--sm" asp-area="" asp-page="/Conta/Entrar">Entrar</a>
-            }
-
-            <button type="button" class="gbr-btn gbr-btn--ghost gbr-btn--icon" id="gbrThemeToggle"
-                    title="Alternar tema claro/escuro" aria-label="Alternar tema claro/escuro">
-                <span class="gbr-theme-icon gbr-theme-icon--sun" aria-hidden="true">&#9728;</span>
-                <span class="gbr-theme-icon gbr-theme-icon--moon" aria-hidden="true">&#9789;</span>
-            </button>
-
-            <button type="button" class="gbr-navbar__hamburger" id="gbrMenuToggle"
-                    aria-expanded="false" aria-controls="gbrNavLinks" aria-label="Abrir menu">
-                <span class="gbr-navbar__hamburger-line"></span>
-                <span class="gbr-navbar__hamburger-line"></span>
-                <span class="gbr-navbar__hamburger-line"></span>
-            </button>
-        </div>
-    </header>
+    @if (ViewData["Breadcrumbs"] is List<(string Texto, string? Url)> migalhas)
+    {
+        <partial name="_Breadcrumb" model="migalhas" />
+    }
 
     <main class="gbr-main gbr-container">
         @RenderBody()
     </main>
 
-    <footer class="gbr-footer">
-        <div class="gbr-flag-strip"><span></span><span></span><span></span></div>
-        <div class="gbr-container gbr-footer__inner">
-            <span>&copy; 2026 Projeto Brasil &mdash; 10 Mandamentos para a Política Brasileira</span>
-            <a class="gbr-navlink" asp-area="" asp-page="/Privacy">Privacidade</a>
-        </div>
-    </footer>
+    <partial name="_PjFooter" />
+</div>
 
-    <script>
-        document.getElementById('gbrThemeToggle')?.addEventListener('click', function () {
-            window.gbrTheme.toggle();
-        });
-    </script>
+    <script src="~/js/pj-snackbar.js" asp-append-version="true"></script>
     <script src="~/js/navbar-menu.js" asp-append-version="true"></script>
+    <script src="~/js/notificacoes-sino.js" asp-append-version="true"></script>
+    @if (_pjMsgSucesso is not null)
+    {
+        <script>window.pjSnackbar(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(_pjMsgSucesso)), 'success');</script>
+    }
+    @if (_pjMsgErro is not null)
+    {
+        <script>window.pjSnackbar(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(_pjMsgErro)), 'error');</script>
+    }
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

@@ -1,0 +1,13 @@
+@using Projetar.Web.Models
+@model Item
+@{
+    var autor = Model.CriadoPorUsuario?.NomeCompleto ?? "Redação";
+}
+<a href="/Itens/@Model.Slug" class="pj-related__card">
+    <img src="@(Model.BannerImagem ?? "/img/placeholder.svg")" alt="" />
+    <div class="pj-related__body">
+        <div class="pj-related__kicker">Princípio @Model.Mandamento!.Id</div>
+        <div class="pj-related__title">@Model.Titulo</div>
+        <div class="pj-related__by">Por @autor</div>
+    </div>
+</a>

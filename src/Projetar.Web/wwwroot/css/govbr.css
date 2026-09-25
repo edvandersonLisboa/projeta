@@ -46,6 +46,10 @@
   --gbr-cinza-200: #E3E8EF;
   --gbr-cinza-100: #F2F5F9;
 
+  /* Creme (fundo de página) */
+  --gbr-creme-200: #EDE7D9;
+  --gbr-creme-100: #F4EFE4;
+
   /* Navy escuro (base do tema escuro) */
   --gbr-navy-900: #071324;
   --gbr-navy-800: #0A1626;
@@ -122,8 +126,8 @@
 /* Padrão = claro */
 :root,
 [data-theme="claro"] {
-  --gbr-bg:            var(--gbr-cinza-100);
-  --gbr-bg-subtle:     var(--gbr-cinza-200);
+  --gbr-bg:            var(--gbr-creme-100);
+  --gbr-bg-subtle:     var(--gbr-creme-200);
   --gbr-surface:       var(--gbr-branco);
   --gbr-surface-2:     var(--gbr-cinza-100);
   --gbr-surface-inset: var(--gbr-cinza-100);
@@ -215,10 +219,13 @@
   --gbr-focus-ring: 0 0 0 3px color-mix(in oklab, var(--gbr-primary) 45%, transparent);
 }
 
-/* ==== Base / tipografia ========================================== */
-*, *::before, *::after { box-sizing: border-box; }
+/* ==== Reset — zera os espaçamentos padrão do navegador; o app define os próprios. === */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { max-width: 100%; overflow-x: hidden; }
 img, video { max-width: 100%; height: auto; }
+ul, ol { list-style: none; }
+button, input, textarea, select { font: inherit; color: inherit; }
+dialog { color: inherit; }
 
 .gbr {
   font-family: var(--gbr-font);
@@ -237,6 +244,11 @@ img, video { max-width: 100%; height: auto; }
   color: var(--gbr-text);
   margin: 0;
 }
+/* Seletor de elemento puro (baixa especificidade de propósito) — qualquer classe mais
+   específica, tipo .gbr-alert__title, continua vencendo por cima deste valor-base. */
+p { margin: 0 0 var(--gbr-space-4); }
+p:last-child { margin-bottom: 0; }
+
 .gbr-display { font-size: var(--gbr-fs-display); font-weight: var(--gbr-fw-extrabold); letter-spacing: -0.025em; }
 .gbr-h1 { font-size: var(--gbr-fs-h1); font-weight: var(--gbr-fw-extrabold); }
 .gbr-h2 { font-size: var(--gbr-fs-h2); }

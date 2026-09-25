@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Projetar.Web.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -11,57 +10,43 @@ public static class DbInitializer
     private const string AdminRole = "Admin";
     private const string RevisorRole = "Revisor";
 
+    /// <summary>Catálogo inicial de tags sugeridas — temas comuns de política pública no Brasil, pra dar
+    /// um ponto de partida no modal de tags em vez de começar totalmente vazio.</summary>
+    private static readonly string[] TagsCatalogoSeed =
+    [
+        "Saúde",
+        "Educação",
+        "Segurança Pública",
+        "Meio Ambiente",
+        "Economia",
+        "Direitos Humanos",
+        "Transparência",
+        "Infraestrutura",
+        "Cultura",
+        "Tecnologia",
+        "Trabalho e Renda",
+        "Habitação",
+    ];
+
     public static async Task RunAsync(IServiceProvider services)
     {
         var db = services.GetRequiredService<ApplicationDbContext>();
         await db.Database.MigrateAsync();
 
-        await SeedMandamentosAsync(db, services);
+        await SeedTagsCatalogoAsync(db);
         await SeedAdminAsync(services);
     }
 
-    private static async Task SeedMandamentosAsync(ApplicationDbContext db, IServiceProvider services)
+    private static async Task SeedTagsCatalogoAsync(ApplicationDbContext db)
     {
-        if (db.Mandamentos.Any())
+        if (db.TagsCatalogo.Any())
         {
             return;
         }
 
-        var env = services.GetRequiredService<IWebHostEnvironment>();
-        var seedPath = Path.Combine(env.ContentRootPath, "Data", "Seed", "mandamentos-seed.json");
-        var json = await File.ReadAllTextAsync(seedPath);
-
-        var seedData = JsonSerializer.Deserialize<List<MandamentoSeedDto>>(json, new JsonSerializerOptions
+        for (var i = 0; i < TagsCatalogoSeed.Length; i++)
         {
-            PropertyNameCaseInsensitive = true,
-        }) ?? [];
-
-        foreach (var dto in seedData)
-        {
-            var mandamento = new Mandamento
-            {
-                Id = dto.Id,
-                Biblical = dto.Biblical,
-                Secular = dto.Secular,
-                Intro = dto.Intro,
-                Ordem = dto.Ordem,
-            };
-
-            foreach (var itemDto in dto.Itens)
-            {
-                mandamento.Itens.Add(new Item
-                {
-                    Id = Guid.NewGuid(),
-                    Slug = itemDto.Slug,
-                    Titulo = itemDto.Titulo,
-                    Corpo = itemDto.Corpo,
-                    Ordem = itemDto.Ordem,
-                    Status = ItemStatus.Original,
-                    CriadoPorUsuarioId = null,
-                });
-            }
-
-            db.Mandamentos.Add(mandamento);
+            db.TagsCatalogo.Add(new TagCatalogo { Nome = TagsCatalogoSeed[i], Ordem = i + 1 });
         }
 
         await db.SaveChangesAsync();

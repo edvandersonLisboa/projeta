@@ -1,0 +1,141 @@
+@page "/Admin/Permissoes"
+@model Projetar.Web.Pages.Admin.PermissoesModel
+@using Projetar.Web.Models
+@{
+    ViewData["Title"] = "Permissões";
+}
+
+<h1 class="gbr-h2">Permissões</h1>
+<p class="gbr-lead" style="margin-bottom:var(--gbr-space-6);">
+    Quem é Admin, quem modera cada princípio ou item, e quantos usuários existem no sistema.
+</p>
+
+<div class="gbr-row" style="gap:var(--gbr-space-4);flex-wrap:wrap;margin-bottom:var(--gbr-space-8);">
+    <div class="gbr-card" style="padding:16px 22px;min-width:140px;">
+        <div class="gbr-eyebrow">Usuários</div>
+        <div class="gbr-h2" style="margin-top:4px;">@Model.TotalUsuarios</div>
+    </div>
+    <div class="gbr-card" style="padding:16px 22px;min-width:140px;">
+        <div class="gbr-eyebrow">Admins</div>
+        <div class="gbr-h2" style="margin-top:4px;">@Model.TotalAdmins</div>
+    </div>
+    <div class="gbr-card" style="padding:16px 22px;min-width:140px;">
+        <div class="gbr-eyebrow">Revisores</div>
+        <div class="gbr-h2" style="margin-top:4px;">@Model.TotalRevisores</div>
+    </div>
+    <div class="gbr-card" style="padding:16px 22px;min-width:140px;">
+        <div class="gbr-eyebrow">Escopos ativos</div>
+        <div class="gbr-h2" style="margin-top:4px;">@Model.TodosEscopos.Count</div>
+    </div>
+</div>
+
+<h2 class="gbr-h4">Admins</h2>
+<p class="gbr-muted" style="margin-bottom:var(--gbr-space-4);">Admin modera tudo e gerencia permissões. Precisa existir pelo menos um.</p>
+
+<form method="post" asp-page-handler="TornarAdmin" class="gbr-row" style="gap:8px;margin-bottom:var(--gbr-space-4);max-width:560px;">
+    <select name="email" class="gbr-select" style="flex:1;" required>
+        <option value="">Escolha o usuário...</option>
+        @foreach (var u in Model.Usuarios.Where(u => !Model.AdminIds.Contains(u.Id)))
+        {
+            <option value="@u.Email">@u.NomeCompleto — @u.Email</option>
+        }
+    </select>
+    <button type="submit" class="gbr-btn gbr-btn--primary gbr-btn--sm">Tornar Admin</button>
+</form>
+
+<div class="gbr-stack" style="margin-bottom:var(--gbr-space-8);">
+    @foreach (var u in Model.Usuarios.Where(u => Model.AdminIds.Contains(u.Id)))
+    {
+        <div class="gbr-card" style="padding:12px 18px;">
+            <div class="gbr-row" style="justify-content:space-between;">
+                <span>@u.NomeCompleto <span class="gbr-muted">— @u.Email</span></span>
+                <form method="post" asp-page-handler="RevogarAdmin" asp-route-usuarioId="@u.Id">
+                    <button type="submit" class="gbr-btn gbr-btn--danger gbr-btn--sm">Remover Admin</button>
+                </form>
+            </div>
+        </div>
+    }
+</div>
+
+<h2 class="gbr-h4">Conceder moderação (Revisor)</h2>
+<p class="gbr-muted" style="margin-bottom:var(--gbr-space-4);">
+    Escopo de princípio: modera qualquer item daquele princípio, presente ou futuro. Escopo de item: só aquele item.
+</p>
+
+<form method="post" asp-page-handler="ConcederEscopo" class="gbr-card gbr-stack" style="max-width:560px;padding:18px;margin-bottom:var(--gbr-space-8);">
+    <div class="gbr-field">
+        <label class="gbr-label">Usuário</label>
+        <select name="email" class="gbr-select" required>
+            <option value="">Escolha o usuário...</option>
+            @foreach (var u in Model.Usuarios.Where(u => !Model.AdminIds.Contains(u.Id)))
+            {
+                <option value="@u.Email">@u.NomeCompleto — @u.Email</option>
+            }
+        </select>
+    </div>
+    <div class="gbr-field">
+        <label class="gbr-label">Tipo de escopo</label>
+        <select name="tipoEscopo" class="gbr-select" onchange="document.getElementById('campoMandamento').hidden = this.value !== 'Mandamento'; document.getElementById('campoItem').hidden = this.value !== 'Item';">
+            <option value="Mandamento">Princípio inteiro</option>
+            <option value="Item">Item específico</option>
+        </select>
+    </div>
+    <div class="gbr-field" id="campoMandamento">
+        <label class="gbr-label">Princípio</label>
+        <select name="mandamentoId" class="gbr-select">
+            <option value="">Escolha o princípio...</option>
+            @foreach (var m in Model.TodosMandamentos)
+            {
+                <option value="@m.Id">Princípio @m.Id — @m.Secular</option>
+            }
+        </select>
+    </div>
+    <div class="gbr-field" id="campoItem" hidden>
+        <label class="gbr-label">Item</label>
+        <select name="itemId" class="gbr-select">
+            <option value="">Escolha o item...</option>
+            @foreach (var i in Model.TodosItens)
+            {
+                <option value="@i.Id">Princípio @i.Mandamento!.Id — @i.Titulo</option>
+            }
+        </select>
+    </div>
+    <div class="gbr-row" style="justify-content:flex-end;">
+        <button type="submit" class="gbr-btn gbr-btn--primary gbr-btn--sm">Conceder</button>
+    </div>
+</form>
+
+<h2 class="gbr-h4">Escopos de moderação ativos (@Model.TodosEscopos.Count)</h2>
+@if (Model.TodosEscopos.Count == 0)
+{
+    <p class="gbr-muted">Nenhum Revisor escopado ainda.</p>
+}
+<div class="gbr-stack">
+    @foreach (var e in Model.TodosEscopos)
+    {
+        <div class="gbr-card" style="padding:12px 18px;">
+            <div class="gbr-row" style="justify-content:space-between;flex-wrap:wrap;">
+                <span>
+                    <strong>@(e.Usuario?.NomeCompleto ?? "Usuário removido")</strong>
+                    modera
+                    @if (e.TipoEscopo == TipoEscopoModeracao.Mandamento)
+                    {
+                        <span>o princípio <strong>@e.MandamentoId — @e.Mandamento?.Secular</strong></span>
+                    }
+                    else
+                    {
+                        <span>o item <strong>@(e.Item?.Titulo ?? "(removido)")</strong></span>
+                    }
+                    <span class="gbr-muted">— concedido por @(e.AdicionadoPorUsuario?.NomeCompleto ?? "—") em @e.DataCriacao.ToLocalTime().ToString("dd/MM/yyyy")</span>
+                    @if (e.Status == StatusEscopoModeracao.Pendente)
+                    {
+                        <span class="gbr-badge gbr-badge--warning">Convite pendente</span>
+                    }
+                </span>
+                <form method="post" asp-page-handler="RevogarEscopo" asp-route-escopoId="@e.Id">
+                    <button type="submit" class="gbr-btn gbr-btn--danger gbr-btn--sm">Revogar</button>
+                </form>
+            </div>
+        </div>
+    }
+</div>
