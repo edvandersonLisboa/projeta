@@ -45,12 +45,14 @@
 
     <partial name="_PjFooter" />
 </div>
+<partial name="_PjModalPropor" />
 
     <script src="~/js/pj-snackbar.js" asp-append-version="true"></script>
     <script src="~/js/navbar-menu.js" asp-append-version="true"></script>
     <script src="~/js/notificacoes-sino.js" asp-append-version="true"></script>
     <script src="~/js/pj-user-menu.js" asp-append-version="true"></script>
     <script src="~/js/pj-mobile-nav.js" asp-append-version="true"></script>
+    <script src="~/js/pj-modal-propor.js" asp-append-version="true"></script>
     @if (_pjMsgSucesso is not null)
     {
         <script>window.pjSnackbar(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(_pjMsgSucesso)), 'success');</script>

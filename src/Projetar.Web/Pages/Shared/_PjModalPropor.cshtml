@@ -1,0 +1,39 @@
+@using Microsoft.EntityFrameworkCore
+@using Projetar.Web.Data
+@using Projetar.Web.Models
+@inject ApplicationDbContext Db
+@{
+    // Modal único, incluído em toda página — qualquer botão "Propor ideia" do site abre ele
+    // em vez de navegar direto, pra escolher em qual princípio a ideia entra antes de seguir
+    // pra tela de proposta.
+    var principiosVisiveis = await Db.Principios
+        .Where(p => p.Visivel)
+        .OrderBy(p => p.Ordem)
+        .AsNoTracking()
+        .ToListAsync();
+}
+<dialog id="modalProporPrincipio" class="pj-dialog" data-propor-modal>
+    <div class="pj-dialog__head">
+        <span class="pj-dialog__title">Em qual princípio sua ideia entra?</span>
+        <button type="button" class="pj-dialog__close" data-propor-fechar aria-label="Fechar">&times;</button>
+    </div>
+    <p class="pj-dialog__hint">Escolha o princípio mais relacionado com a mudança de lei que você quer propor.</p>
+
+    @if (principiosVisiveis.Count == 0)
+    {
+        <p class="pj-note">Nenhum princípio disponível pra propor ideia no momento.</p>
+    }
+    else
+    {
+        <div class="pj-propor-lista">
+            @for (var i = 0; i < principiosVisiveis.Count; i++)
+            {
+                var p = principiosVisiveis[i];
+                <a href="/Principios/@p.Id/Propor" class="pj-propor-item">
+                    <span class="n">@((i + 1).ToString("00"))</span>
+                    <span class="txt">@p.Secular</span>
+                </a>
+            }
+        </div>
+    }
+</dialog>

@@ -7,11 +7,21 @@
 
 <span class="gbr-eyebrow">Todos os princípios</span>
 <h1 class="gbr-h2" style="margin-bottom:var(--gbr-space-2);">Ideias</h1>
-<p class="gbr-lead" style="margin-bottom:var(--gbr-space-8);">Todas as propostas de lei já publicadas no Projeta, das mais recentes às mais antigas.</p>
+<p class="gbr-lead" style="margin-bottom:var(--gbr-space-6);">Todas as propostas de lei já publicadas no Projeta, das mais recentes às mais antigas.</p>
+
+@if (Model.UsuarioLogado)
+{
+    <div class="gbr-tabs" style="margin-bottom:var(--gbr-space-8);">
+        <a href="?filtro=todas" class="gbr-tab @(Model.Filtro == "todas" ? "gbr-tab--active" : "")">Todas as ideias</a>
+        <a href="?filtro=minhas" class="gbr-tab @(Model.Filtro == "minhas" ? "gbr-tab--active" : "")">Minhas ideias</a>
+    </div>
+}
 
 @if (Model.Itens.Count == 0)
 {
-    <p class="gbr-muted">Nenhuma ideia publicada ainda.</p>
+    <p class="gbr-muted">
+        @(Model.Filtro == "minhas" ? "Você ainda não propôs nenhuma ideia." : "Nenhuma ideia publicada ainda.")
+    </p>
 }
 else
 {
