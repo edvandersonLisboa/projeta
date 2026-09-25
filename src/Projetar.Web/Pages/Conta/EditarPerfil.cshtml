@@ -1,0 +1,121 @@
+@page
+@model Projetar.Web.Pages.Conta.EditarPerfilModel
+@{
+    Layout = "_LayoutPj";
+    ViewData["Title"] = "Editar perfil";
+}
+
+<div class="pj-shell pj-breadcrumb">
+    <a href="/">Início</a><span class="sep">/</span><span class="current">Editar perfil</span>
+</div>
+
+<div class="pj-shell" style="padding:18px 28px 48px; max-width:640px;">
+
+    <div class="pj-card pj-card--pad">
+        <div class="pj-card__title">Seus dados</div>
+        <p class="pj-note" style="margin-bottom:18px;">@Model.Email</p>
+
+        <div asp-validation-summary="ModelOnly" class="pj-alert pj-alert--danger" role="alert" data-valmsg-summary="true" style="display:none;"></div>
+
+        <form method="post" asp-page-handler="SalvarPerfil" class="gbr-stack">
+            <div class="pj-field-row">
+                <div class="pj-field">
+                    <label asp-for="Input.Nome">Nome</label>
+                    <input type="text" asp-for="Input.Nome" required />
+                    <span class="pj-field__error" asp-validation-for="Input.Nome"></span>
+                </div>
+                <div class="pj-field">
+                    <label asp-for="Input.Sobrenome">Sobrenome</label>
+                    <input type="text" asp-for="Input.Sobrenome" required />
+                    <span class="pj-field__error" asp-validation-for="Input.Sobrenome"></span>
+                </div>
+            </div>
+
+            <div class="pj-field-row">
+                <div class="pj-field">
+                    <label asp-for="Input.Estado">Estado</label>
+                    <select asp-for="Input.Estado" required>
+                        <option value="">Selecione...</option>
+                        @foreach (var (sigla, nome) in Model.Estados)
+                        {
+                            <option value="@sigla">@nome</option>
+                        }
+                    </select>
+                    <span class="pj-field__error" asp-validation-for="Input.Estado"></span>
+                </div>
+                <div class="pj-field">
+                    <label asp-for="Input.Municipio">Município</label>
+                    <input type="text" asp-for="Input.Municipio" required />
+                    <span class="pj-field__error" asp-validation-for="Input.Municipio"></span>
+                </div>
+            </div>
+
+            <div class="pj-field-row">
+                <div class="pj-field">
+                    <label asp-for="Input.Telefone">Telefone <small>(opcional)</small></label>
+                    <input type="tel" asp-for="Input.Telefone" autocomplete="tel" />
+                </div>
+                <div class="pj-field">
+                    <label asp-for="Input.Cpf">CPF <small>(opcional)</small></label>
+                    <input type="text" asp-for="Input.Cpf" />
+                </div>
+            </div>
+
+            <div class="gbr-row" style="justify-content:flex-end;">
+                <button type="submit" class="pj-btn pj-btn--green">Salvar dados</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="pj-card pj-card--pad" style="margin-top:18px;">
+        <details id="painelSenha">
+            <summary class="pj-link-btn">@(Model.TemSenhaLocal ? "Trocar senha" : "Definir uma senha")</summary>
+
+            <form method="post" asp-page-handler="TrocarSenha" class="gbr-stack" style="margin-top:14px;">
+                @if (Model.TemSenhaLocal)
+                {
+                    <div class="pj-field">
+                        <label asp-for="Senha.SenhaAtual">Senha atual</label>
+                        <input type="password" asp-for="Senha.SenhaAtual" autocomplete="current-password" />
+                        <span class="pj-field__error" asp-validation-for="Senha.SenhaAtual"></span>
+                    </div>
+                }
+                else
+                {
+                    <p class="pj-note">Sua conta entra só pelo Google — defina uma senha aqui pra também poder entrar por e-mail.</p>
+                }
+
+                <div class="pj-field-row">
+                    <div class="pj-field">
+                        <label asp-for="Senha.NovaSenha">Nova senha</label>
+                        <input type="password" asp-for="Senha.NovaSenha" autocomplete="new-password" />
+                        <span class="pj-field__error" asp-validation-for="Senha.NovaSenha"></span>
+                    </div>
+                    <div class="pj-field">
+                        <label asp-for="Senha.ConfirmarNovaSenha">Confirmar nova senha</label>
+                        <input type="password" asp-for="Senha.ConfirmarNovaSenha" autocomplete="new-password" />
+                        <span class="pj-field__error" asp-validation-for="Senha.ConfirmarNovaSenha"></span>
+                    </div>
+                </div>
+
+                <div class="gbr-row" style="justify-content:flex-end;">
+                    <button type="submit" class="pj-btn pj-btn--navy">@(Model.TemSenhaLocal ? "Atualizar senha" : "Definir senha")</button>
+                </div>
+            </form>
+        </details>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        // Se o formulário de senha tiver erro de validação, o painel já abre sozinho —
+        // senão o erro fica escondido atrás do <summary> fechado.
+        (function () {
+            var painel = document.getElementById('painelSenha');
+            if (painel && painel.querySelector('.field-validation-error, .input-validation-error')) {
+                painel.open = true;
+            }
+        })();
+    </script>
+}

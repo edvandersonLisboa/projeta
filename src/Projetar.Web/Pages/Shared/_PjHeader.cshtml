@@ -15,7 +15,6 @@
     var navItems = new (string Label, string Href)[]
     {
         ("Início", "/"),
-        ("Propostas", "/"),
         ("Ideias", "/Ideias"),
         ("Sobre", "/Sobre"),
     };
@@ -67,12 +66,14 @@
                 <a href="/Moderacao/Index" class="@(navAtivo == "Moderação" ? "active" : null)">Moderação</a>
             }
         </div>
+        
         <div class="pj-nav__actions">
             @if (User.IsInRole("Admin"))
             {
                 <a href="/Principios/Gerenciar">Seções</a>
                 <a href="/Admin/Permissoes">Permissões</a>
             }
+              <a href="/#principios" class="pj-pill pj-pill--gold">Propor ideia</a>
             @if (SignInManager.IsSignedIn(User))
             {
                 var usuarioAtual = await UserManager.GetUserAsync(User);
@@ -114,21 +115,35 @@
                     </div>
                 </div>
 
-                @if (usuarioAtual is not null && !usuarioAtual.PerfilCompleto)
-                {
-                    <a href="/Conta/CompletarPerfil">Completar perfil</a>
-                }
-                <a href="/Historico/Index">Meu Histórico</a>
-                <span>@(usuarioAtual?.Nome ?? "Você")</span>
-                <form method="post" asp-area="" asp-page="/Conta/Sair">
-                    <button type="submit" class="pj-link-like">Sair</button>
-                </form>
+                <div class="pj-user-menu" data-user-menu>
+                    <button type="button" class="pj-user-menu__trigger" data-user-menu-toggle aria-haspopup="true" aria-expanded="false" title="Minha conta">
+                        <span class="pj-avatar" style="background:@AvatarUtils.Color(usuarioAtual?.NomeCompleto ?? "Você")">@AvatarUtils.Initials(usuarioAtual?.NomeCompleto ?? "Você")</span>
+                    </button>
+                    <div class="pj-user-menu__dropdown" data-user-menu-dropdown>
+                        <div class="pj-user-menu__head">
+                            <span class="pj-avatar pj-avatar--lg" style="background:@AvatarUtils.Color(usuarioAtual?.NomeCompleto ?? "Você")">@AvatarUtils.Initials(usuarioAtual?.NomeCompleto ?? "Você")</span>
+                            <span class="pj-user-menu__info">
+                                <span class="pj-user-menu__nome">@(usuarioAtual?.NomeCompleto ?? "Você")</span>
+                                <span class="pj-user-menu__email">@usuarioAtual?.Email</span>
+                            </span>
+                        </div>
+                        @if (usuarioAtual is not null && !usuarioAtual.PerfilCompleto)
+                        {
+                            <a href="/Conta/CompletarPerfil" class="pj-user-menu__item">Completar perfil</a>
+                        }
+                        <a href="/Conta/EditarPerfil" class="pj-user-menu__item">Editar perfil</a>
+                        <a href="/Historico/Index" class="pj-user-menu__item">Meu Histórico</a>
+                        <form method="post" asp-area="" asp-page="/Conta/Sair">
+                            <button type="submit" class="pj-user-menu__item pj-user-menu__item--danger">Sair</button>
+                        </form>
+                    </div>
+                </div>
             }
             else
             {
                 <a href="/Conta/Entrar" class="muted">Entrar</a>
             }
-            <a href="/#principios" class="pj-pill pj-pill--gold">Propor ideia</a>
+          
         </div>
     </div>
 </nav>
