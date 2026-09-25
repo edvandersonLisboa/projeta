@@ -115,6 +115,7 @@ else if (Model.ItemAtual.Status == ItemStatus.Arquivado)
             <span class="label">Compartilhar:</span>
             <a target="_blank" rel="noopener noreferrer" aria-label="Compartilhar no Facebook"
                href="https://www.facebook.com/sharer/sharer.php?u=@Uri.EscapeDataString(urlAtual)">f</a>
+            <a href="#" data-copy-link="@urlAtual" data-copy-label="Link copiado! Cole no Instagram" aria-label="Compartilhar no Instagram" onclick="return false;">ig</a>
             <a target="_blank" rel="noopener noreferrer" aria-label="Compartilhar no X"
                href="https://twitter.com/intent/tweet?url=@Uri.EscapeDataString(urlAtual)&text=@Uri.EscapeDataString(Model.ItemAtual.Titulo)">x</a>
             <a target="_blank" rel="noopener noreferrer" aria-label="Compartilhar no LinkedIn"
