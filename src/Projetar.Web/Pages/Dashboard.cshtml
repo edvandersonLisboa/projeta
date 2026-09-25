@@ -1,0 +1,269 @@
+@page
+@model Projetar.Web.Pages.DashboardModel
+@{
+    Layout = "_LayoutPj";
+    ViewData["Title"] = "Painel";
+    var subtitulo = Model.Escopo switch
+    {
+        "admin" => "Visão geral de toda a plataforma — todos os itens, usuários e movimentações.",
+        "criador" => "Tudo que aconteceu nos itens que você criou, incluindo alterações de outras pessoas.",
+        _ => "Suas próprias contribuições e movimentações.",
+    };
+}
+
+<div class="pj-shell pj-breadcrumb">
+    <a href="/">Início</a><span class="sep">/</span><span class="current">Painel</span>
+</div>
+
+<div class="pj-shell pj-dash" style="padding:18px 28px 48px;">
+
+    <div class="pj-dash__header">
+        <h1>Painel de movimentações</h1>
+        <p class="pj-note">@subtitulo</p>
+    </div>
+
+    <div class="pj-dash__kpis">
+        <div class="pj-dash-kpi">
+            <span class="pj-dash-kpi__valor">@Model.Total</span>
+            <span class="pj-dash-kpi__rotulo">Movimentações</span>
+        </div>
+        <div class="pj-dash-kpi pj-dash-kpi--ok">
+            <span class="pj-dash-kpi__valor">@Model.TotalAprovadas</span>
+            <span class="pj-dash-kpi__rotulo">Aprovadas</span>
+        </div>
+        <div class="pj-dash-kpi pj-dash-kpi--pendente">
+            <span class="pj-dash-kpi__valor">@Model.TotalPendentes</span>
+            <span class="pj-dash-kpi__rotulo">Pendentes</span>
+        </div>
+        <div class="pj-dash-kpi pj-dash-kpi--erro">
+            <span class="pj-dash-kpi__valor">@Model.TotalRejeitadas</span>
+            <span class="pj-dash-kpi__rotulo">Rejeitadas</span>
+        </div>
+        <div class="pj-dash-kpi">
+            <span class="pj-dash-kpi__valor">@Model.TaxaAprovacao.ToString("P0")</span>
+            <span class="pj-dash-kpi__rotulo">Taxa de aprovação</span>
+        </div>
+        @if (Model.EhAdmin)
+        {
+            <div class="pj-dash-kpi">
+                <span class="pj-dash-kpi__valor">@Model.TotalUsuarios</span>
+                <span class="pj-dash-kpi__rotulo">Usuários</span>
+            </div>
+            <div class="pj-dash-kpi">
+                <span class="pj-dash-kpi__valor">@Model.TotalPrincipios</span>
+                <span class="pj-dash-kpi__rotulo">Princípios</span>
+            </div>
+            <div class="pj-dash-kpi">
+                <span class="pj-dash-kpi__valor">@Model.TotalItens</span>
+                <span class="pj-dash-kpi__rotulo">Itens</span>
+            </div>
+        }
+    </div>
+
+    <div class="pj-dash__grid">
+
+        <div class="pj-card pj-card--pad pj-dash-card">
+            <div class="pj-card__title">Movimentações nos últimos 14 dias</div>
+            @if (Model.Total == 0)
+            {
+                <p class="pj-note">Ainda não há movimentações para mostrar.</p>
+            }
+            else
+            {
+                var maxDia = Math.Max(1, Model.LinhaDoTempo.Max(d => d.Valor));
+                <div class="pj-dash-cols">
+                    @foreach (var (rotulo, valor) in Model.LinhaDoTempo)
+                    {
+                        var altura = valor == 0 ? 2 : (int)Math.Round(valor * 100.0 / maxDia);
+                        <div class="pj-dash-col" title="@rotulo: @valor">
+                            <div class="pj-dash-col__barra" style="height:@(altura)%;"></div>
+                            <span class="pj-dash-col__rotulo">@rotulo</span>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+        <div class="pj-card pj-card--pad pj-dash-card">
+            <div class="pj-card__title">Situação das contribuições</div>
+            @if (Model.Total == 0)
+            {
+                <p class="pj-note">Sem dados ainda.</p>
+            }
+            else
+            {
+                var acumulado = 0.0;
+                var partes = new List<string>();
+                foreach (var c in Model.PorSituacao.Where(c => c.Valor > 0))
+                {
+                    var fatia = c.Valor * 100.0 / Model.Total;
+                    partes.Add($"{c.Cor} {acumulado:0.##}% {acumulado + fatia:0.##}%");
+                    acumulado += fatia;
+                }
+                var gradiente = string.Join(", ", partes);
+                <div class="pj-dash-donut" style="background:conic-gradient(@gradiente);">
+                    <div class="pj-dash-donut__centro">@Model.Total</div>
+                </div>
+                <ul class="pj-dash-legenda">
+                    @foreach (var c in Model.PorSituacao.Where(c => c.Valor > 0))
+                    {
+                        <li><span class="pj-dash-dot" style="background:@c.Cor;"></span>@c.Rotulo <b>@c.Valor</b></li>
+                    }
+                </ul>
+            }
+        </div>
+
+        <div class="pj-card pj-card--pad pj-dash-card">
+            <div class="pj-card__title">Contribuições por tipo</div>
+            @if (Model.PorTipo.Count == 0)
+            {
+                <p class="pj-note">Sem dados ainda.</p>
+            }
+            else
+            {
+                var maxTipo = Model.PorTipo.Max(c => c.Valor);
+                <div class="pj-dash-barras">
+                    @foreach (var c in Model.PorTipo)
+                    {
+                        <div class="pj-dash-barra-linha">
+                            <span class="pj-dash-barra-linha__rotulo">@c.Rotulo</span>
+                            <div class="pj-dash-barra-linha__trilho">
+                                <div class="pj-dash-barra-linha__preenchido" style="width:@(c.Valor * 100.0 / maxTipo)%; background:@c.Cor;"></div>
+                            </div>
+                            <span class="pj-dash-barra-linha__valor">@c.Valor</span>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+        <div class="pj-card pj-card--pad pj-dash-card">
+            <div class="pj-card__title">@(Model.EhAdmin || Model.EhCriador ? "Itens mais movimentados" : "Seus itens mais ativos")</div>
+            @if (Model.PorItem.Count == 0)
+            {
+                <p class="pj-note">Sem dados ainda.</p>
+            }
+            else
+            {
+                var maxItem = Model.PorItem.Max(c => c.Valor);
+                <div class="pj-dash-barras">
+                    @foreach (var c in Model.PorItem)
+                    {
+                        <div class="pj-dash-barra-linha">
+                            <span class="pj-dash-barra-linha__rotulo" title="@c.Rotulo">@c.Rotulo</span>
+                            <div class="pj-dash-barra-linha__trilho">
+                                <div class="pj-dash-barra-linha__preenchido" style="width:@(c.Valor * 100.0 / maxItem)%; background:@c.Cor;"></div>
+                            </div>
+                            <span class="pj-dash-barra-linha__valor">@c.Valor</span>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+        @if (Model.EhAdmin)
+        {
+            <div class="pj-card pj-card--pad pj-dash-card">
+                <div class="pj-card__title">Usuários por perfil</div>
+                @{
+                    var totalPerfil = Model.UsuariosPorPerfil.Sum(c => c.Valor);
+                }
+                @if (totalPerfil == 0)
+                {
+                    <p class="pj-note">Sem dados ainda.</p>
+                }
+                else
+                {
+                    var acumuladoP = 0.0;
+                    var partesP = new List<string>();
+                    foreach (var c in Model.UsuariosPorPerfil.Where(c => c.Valor > 0))
+                    {
+                        var fatia = c.Valor * 100.0 / totalPerfil;
+                        partesP.Add($"{c.Cor} {acumuladoP:0.##}% {acumuladoP + fatia:0.##}%");
+                        acumuladoP += fatia;
+                    }
+                    <div class="pj-dash-donut" style="background:conic-gradient(@string.Join(", ", partesP));">
+                        <div class="pj-dash-donut__centro">@totalPerfil</div>
+                    </div>
+                    <ul class="pj-dash-legenda">
+                        @foreach (var c in Model.UsuariosPorPerfil.Where(c => c.Valor > 0))
+                        {
+                            <li><span class="pj-dash-dot" style="background:@c.Cor;"></span>@c.Rotulo <b>@c.Valor</b></li>
+                        }
+                    </ul>
+                }
+            </div>
+
+            <div class="pj-card pj-card--pad pj-dash-card">
+                <div class="pj-card__title">Usuários por estado</div>
+                @if (Model.UsuariosPorEstado.Count == 0)
+                {
+                    <p class="pj-note">Sem dados ainda.</p>
+                }
+                else
+                {
+                    var maxEstado = Model.UsuariosPorEstado.Max(c => c.Valor);
+                    <div class="pj-dash-barras">
+                        @foreach (var c in Model.UsuariosPorEstado)
+                        {
+                            <div class="pj-dash-barra-linha">
+                                <span class="pj-dash-barra-linha__rotulo">@c.Rotulo</span>
+                                <div class="pj-dash-barra-linha__trilho">
+                                    <div class="pj-dash-barra-linha__preenchido" style="width:@(c.Valor * 100.0 / maxEstado)%; background:@c.Cor;"></div>
+                                </div>
+                                <span class="pj-dash-barra-linha__valor">@c.Valor</span>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+
+    </div>
+
+    <div class="pj-card pj-card--pad" style="margin-top:18px;">
+        <div class="pj-card__title">Últimas movimentações</div>
+        @if (Model.UltimasMovimentacoes.Count == 0)
+        {
+            <p class="pj-note">Nenhuma movimentação ainda.</p>
+        }
+        else
+        {
+            <div class="pj-dash-tabela">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Tipo</th>
+                            <th>Situação</th>
+                            <th>Data</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var m in Model.UltimasMovimentacoes)
+                        {
+                            <tr>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(m.LinkAcao))
+                                    {
+                                        <a href="@m.LinkAcao">@m.ItemTitulo</a>
+                                    }
+                                    else
+                                    {
+                                        @m.ItemTitulo
+                                    }
+                                </td>
+                                <td>@m.TipoRotulo</td>
+                                <td>
+                                    <span class="pj-status pj-status--@(m.Situacao switch { "aprovado" => "ok", "rejeitado" => "rej", _ => "pend" })">@m.StatusRotulo</span>
+                                </td>
+                                <td>@m.DataCriacao.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+
+</div>

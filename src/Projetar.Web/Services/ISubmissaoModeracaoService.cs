@@ -43,6 +43,13 @@ public interface ISubmissaoModeracaoService
 {
     Task<List<SubmissaoResumo>> ListarPorAutorAsync(string usuarioId);
 
+    /// <summary>Toda movimentação (de qualquer autor) que aconteceu nos itens informados — usado pelo
+    /// Dashboard pra dar ao criador de um item a visão geral de tudo que aconteceu nele.</summary>
+    Task<List<SubmissaoResumo>> ListarPorItensAsync(IEnumerable<Guid> itemIds);
+
+    /// <summary>Toda movimentação da plataforma, sem filtro — visão global só pra Admin no Dashboard.</summary>
+    Task<List<SubmissaoResumo>> ListarTodasAsync();
+
     /// <summary>Toda submissão (de qualquer autor) que já tem pelo menos uma mensagem trocada, mais recente primeiro.</summary>
     Task<List<SubmissaoResumo>> ListarComConversaAsync();
 
